@@ -1,0 +1,45 @@
+﻿using System.Collections.Generic;
+
+namespace Streams
+{
+    public class UnreliableStream : IStream
+    {
+        public static UnreliableStream GetInstance()
+        {
+            return Instance;
+        }
+        
+        private static readonly UnreliableStream Instance =  new UnreliableStream();
+
+        private UnreliableStream() {}
+
+        private IList<byte[]> _sendList = new List<byte[]>();
+        private IList<byte[]> _receiveList = new List<byte[]>();
+
+        public void SendMessage(byte[] data)
+        {
+            _sendList.Add(data);
+        }
+
+        public IList<byte[]> GetPendingMessagesForSend()
+        {
+            if (_sendList.Count == 0) return null;
+            var result = _sendList;
+            _sendList = new List<byte[]>();
+            return result;
+        }
+
+        public void Give(byte[] data)
+        {
+            _receiveList.Add(data);
+        }
+
+        public IList<byte[]> ReceiveMessages()
+        {
+            if (_receiveList.Count == 0) return null;
+            var result = _receiveList;
+            _receiveList = new List<byte[]>();
+            return result;
+        }
+    }
+}
