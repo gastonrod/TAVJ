@@ -51,4 +51,18 @@ public class Connection
             return null;
         }
     }
+
+    public IList<byte[]> ReceiveAllData()
+    {
+        lock (_messages)
+        {
+            IList<byte[]> dataList = new List<byte[]>(_messages.Count);
+            while (_messages.Count > 0)
+            {
+                dataList.Add(_messages.Dequeue());
+            }
+
+            return dataList;
+        }
+    }
 }

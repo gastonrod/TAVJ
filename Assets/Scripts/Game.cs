@@ -1,29 +1,26 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 public class Game : MonoBehaviour
 {
     public bool EnableServer;
     public bool EnableClient;
 
-    private Server _server;
-    private Client _client;
+    private Server.Game _serverGame;
+    private Client.Game _clientGame;
     
     // Start is called before the first frame update
     void Start()
     {
         if (EnableServer)
         {
-            _server = new Server();
-            _server.Start();
+            _serverGame = new Server.Game();
+            _serverGame.Start();
         }
 
         if (EnableClient)
         {
-            _client = new Client();
-            _client.Start();
+            _clientGame = new Client.Game();
+            _clientGame.Start();
         }
     }
 
@@ -32,12 +29,12 @@ public class Game : MonoBehaviour
     {
         if (EnableServer)
         {
-            _server.Update();
+            _serverGame.Update();
         }
 
         if (EnableClient)
         {
-            _client.Update();
+            _clientGame.Update();
         }
     }
 }
