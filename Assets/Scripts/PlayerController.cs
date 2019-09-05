@@ -1,7 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using Protocols;
-using Streams;
+﻿using Streams;
 using UnityEngine;
 
 public class PlayerController : MonoBehaviour
@@ -11,12 +8,18 @@ public class PlayerController : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        _stream = UnreliableStream.GetInstance();
+        
     }
 
+    public void SetStream(IStream stream)
+    {
+        _stream = stream;
+    }
+    
     // Update is called once per frame
     void Update()
     {
+        if (_stream == null) return;
         if (Input.GetKeyDown(KeyCode.DownArrow))
         {
             _stream.SendMessage(Protocols.MovementProtocol.Serialize(Protocols.MovementProtocol.Direction.Down));

@@ -7,7 +7,7 @@ using UnityEngine;
 using UnityEngine.Serialization;
 using static UnityEngine.Object;
 
-public class Server : MonoBehaviour
+public class Server
 {
     public bool enableServer;
     public String clientAddress;
@@ -19,8 +19,7 @@ public class Server : MonoBehaviour
     private Connection _connection;
     private Protocol.Positions _positions;
     
-    // Start is called before the first frame update
-    void Start()
+    public void Start()
     {
         if (enableServer)
         {
@@ -30,9 +29,8 @@ public class Server : MonoBehaviour
             _positions = new Protocol.Positions();  
         }
     }
-
-    // Update is called once per frame
-    void Update()
+    
+    public void Update()
     {
         if (enableServer)
         {

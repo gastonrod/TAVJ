@@ -4,14 +4,7 @@ namespace Streams
 {
     public class UnreliableStream : IStream
     {
-        public static UnreliableStream GetInstance()
-        {
-            return Instance;
-        }
-        
-        private static readonly UnreliableStream Instance =  new UnreliableStream();
-
-        private UnreliableStream() {}
+        public UnreliableStream() {}
 
         private IList<byte[]> _sendList = new List<byte[]>();
         private IList<byte[]> _receiveList = new List<byte[]>();
