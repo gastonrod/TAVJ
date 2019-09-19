@@ -5,6 +5,8 @@ public class Game : MonoBehaviour
     public bool EnableServer;
     public bool EnableClient;
 
+    public GameObject PlayerPrefab;
+    
     private Server.Game _serverGame;
     private Client.Game _clientGame;
     
@@ -13,13 +15,13 @@ public class Game : MonoBehaviour
     {
         if (EnableServer)
         {
-            _serverGame = new Server.Game();
+            _serverGame = new Server.Game(PlayerPrefab);
             _serverGame.Start();
         }
 
         if (EnableClient)
         {
-            _clientGame = new Client.Game();
+            _clientGame = new Client.Game(PlayerPrefab);
             _clientGame.Start();
         }
     }

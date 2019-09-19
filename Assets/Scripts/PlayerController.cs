@@ -5,7 +5,6 @@ public class PlayerController : MonoBehaviour
 {
     private IStream _stream;
     
-    // Start is called before the first frame update
     void Start()
     {
         
@@ -16,8 +15,7 @@ public class PlayerController : MonoBehaviour
         _stream = stream;
     }
     
-    // Update is called once per frame
-    void Update()
+    public void Update()
     {
         if (_stream == null) return;
         if (Input.GetKeyDown(KeyCode.DownArrow))

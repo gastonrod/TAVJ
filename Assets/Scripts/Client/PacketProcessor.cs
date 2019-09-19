@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using Protocols;
 using Streams;
 using UnityEngine;
 
@@ -9,14 +10,13 @@ namespace Client
     public class PacketProcessor
     {
         private readonly Connection _connection;
-        private readonly byte _clientId;
+        private byte _clientId;
         private readonly IDictionary<byte, IStream> _streamDictionary;
         private byte _nextStreamId;
         
-        public PacketProcessor(Connection connection, byte clientId)
+        public PacketProcessor(Connection connection)
         {
             _connection = connection;
-            _clientId = clientId;
             _streamDictionary = new Dictionary<byte, IStream>();
             _nextStreamId = 0;
         }
@@ -26,13 +26,18 @@ namespace Client
             _streamDictionary.Add(_nextStreamId++, stream);
         }
 
+        public void SetClientId(byte clientId)
+        {
+            _clientId = clientId;
+        }
+        
         public void Update()
         {
             // Receive messages
             IList<byte[]> serializedMessages = _connection.ReceiveAllData();
             foreach (var serializedMessage in serializedMessages)
             {
-                var message = PacketProcessorProtocol.Deserialize(serializedMessage);
+                var message = PacketProcessorProtocol.DeserializeServerToClientMessage(serializedMessage);
                 bool foundStream = _streamDictionary.TryGetValue(message.StreamId, out IStream stream);
                 if (!foundStream)
                 {
@@ -49,10 +54,13 @@ namespace Client
                 IList<byte[]> payloadsToSend = stream.GetPendingMessagesForSend();
                 foreach (byte[] payload in payloadsToSend)
                 {
-                    var message = new PacketProcessorProtocol.Message();
-                    message.StreamId = streamId;
-                    message.Payload = payload;
-                    _connection.SendData(PacketProcessorProtocol.Serialize(message));
+                    var message = new PacketProcessorProtocol.ClientToServerMessage
+                    {
+                        StreamId = streamId,
+                        ClientId = _clientId,
+                        Payload = payload
+                    };
+                    _connection.SendData(PacketProcessorProtocol.SerializeClientToServerMessage(message));
                 }
             }
         }

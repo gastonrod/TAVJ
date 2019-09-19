@@ -2,10 +2,8 @@
 
 namespace Streams
 {
-    public class UnreliableStream : IStream
+    public class ReliableFastStream : IStream
     {
-        public UnreliableStream() {}
-
         private IList<byte[]> _sendList = new List<byte[]>();
         private IList<byte[]> _receiveList = new List<byte[]>();
 

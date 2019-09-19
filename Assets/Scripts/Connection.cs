@@ -7,7 +7,6 @@ using System.Threading;
 public class Connection
 {
     private readonly Queue<byte[]> _messages = new Queue<byte[]>();
-
     private readonly UdpClient _udpClient;
 
     public Connection(IPAddress destinationIpAddress, short sourcePort, short destinationPort)
