@@ -2,35 +2,40 @@
 
 namespace Streams
 {
-    public class ReliableFastStream : IStream
+    public class ReliableFastStream<T> : IStream<T>
     {
+        private static readonly byte DEFAULT_ID = 1;
+        
         private IList<byte[]> _sendList = new List<byte[]>();
-        private IList<byte[]> _receiveList = new List<byte[]>();
+        private IList<(byte[], T)> _receiveList = new List<(byte[], T)>();
 
         public void SendMessage(byte[] data)
         {
             _sendList.Add(data);
         }
         
-        public IList<byte[]> ReceiveMessages()
+        public IList<(byte[], T)> ReceiveMessages()
         {
-            if (_receiveList.Count == 0) return null;
             var result = _receiveList;
-            _receiveList = new List<byte[]>();
+            _receiveList = new List<(byte[], T)>();
             return result;
         }
 
         public IList<byte[]> GetPendingMessagesForSend()
         {
-            if (_sendList.Count == 0) return null;
             var result = _sendList;
             _sendList = new List<byte[]>();
             return result;
         }
 
-        public void Give(byte[] data)
+        public void Give(byte[] data, T metadata)
         {
-            _receiveList.Add(data);
+            _receiveList.Add((data, metadata));
+        }
+
+        public byte GetId()
+        {
+            return DEFAULT_ID;
         }
     }
 }

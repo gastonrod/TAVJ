@@ -10,9 +10,9 @@ namespace Client
 {
     public class Game
     {
-        public String serverAddress;
-        public short serverPort;
-        public short clientPort;
+        private String _stringServerAddress;
+        private short _serverPort;
+        private short _clientPort;
 
         private IPAddress _serverAddress;
         private Connection _connection;
@@ -21,9 +21,9 @@ namespace Client
         private GameObject _playerGameObject;
         private PlayerController _playerController;
 
-        private UnreliableStream _unreliableStream;
-        private ReliableFastStream _reliableFastStream;
-        private ReliableSlowStream _reliableSlowStream;
+        private UnreliableStream<IPEndPoint> _unreliableStream;
+        private ReliableFastStream<IPEndPoint> _reliableFastStream;
+        private ReliableSlowStream<IPEndPoint> _reliableSlowStream;
         
         private enum State {START, JOIN_REQUESTED, JOINED}
         private State _state;
@@ -32,8 +32,11 @@ namespace Client
         private GameObject _playerPrefab;
         private Dictionary<byte, Transform> players;
         
-        public Game(GameObject playerPrefab)
+        public Game(GameObject playerPrefab, String serverAddress, short serverPort, short clientPort)
         {
+            _stringServerAddress = serverAddress;
+            _serverPort = serverPort;
+            _clientPort = clientPort;
             _playerPrefab = playerPrefab;
             _state = State.START;
             players = new Dictionary<byte, Transform>();
@@ -41,14 +44,14 @@ namespace Client
         
         public void Start()
         {
-            _serverAddress = IPAddress.Parse(serverAddress);
-            _connection = new Connection(_serverAddress, clientPort, serverPort);
+            _serverAddress = IPAddress.Parse(_stringServerAddress);
+            _connection = new Connection(_serverAddress, _clientPort, _serverPort);
             _packetProcessor = new PacketProcessor(_connection);
             _playerGameObject = GameObject.FindGameObjectWithTag("Player");
             _playerController = _playerGameObject.GetComponent<PlayerController>();
-            _unreliableStream = new UnreliableStream();
-            _reliableFastStream = new ReliableFastStream();
-            _reliableSlowStream = new ReliableSlowStream();
+            _unreliableStream = new UnreliableStream<IPEndPoint>();
+            _reliableFastStream = new ReliableFastStream<IPEndPoint>();
+            _reliableSlowStream = new ReliableSlowStream<IPEndPoint>();
             _packetProcessor.RegisterStream(_unreliableStream);
             _packetProcessor.RegisterStream(_reliableFastStream);
             _packetProcessor.RegisterStream(_reliableSlowStream);
@@ -79,9 +82,10 @@ namespace Client
 
         private void JoinRequestedUpdate()
         {
-            IList<byte[]> messages = _reliableSlowStream.ReceiveMessages();
-            foreach (var message in messages)
+            IList<(byte[], IPEndPoint)> messagesWithMetadata = _reliableSlowStream.ReceiveMessages();
+            foreach (var messageWithMetadata in messagesWithMetadata)
             {
+                var message = messageWithMetadata.Item1;
                 var joinResponseMessage = JoinProtocol.DeserializeJoinAcceptMessage(message);
                 _clientId = joinResponseMessage.ClientId;
                 _packetProcessor.SetClientId(_clientId);
@@ -96,9 +100,10 @@ namespace Client
 
         private void JoinedUpdate()
         {
-            IList<byte[]> messages = _unreliableStream.ReceiveMessages();
-            foreach (var message in messages)
+            IList<(byte[], IPEndPoint)> messagesWithMetadata = _unreliableStream.ReceiveMessages();
+            foreach (var messageWithMetadata in messagesWithMetadata)
             {
+                var message = messageWithMetadata.Item1;
                 var snapshot = GameProtocol.DeserializeSnapshotMessage(message);
                 // ReSharper disable once Unity.PerformanceCriticalCodeInvocation
                 ApplySnapshot(snapshot);

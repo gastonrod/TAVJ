@@ -2,6 +2,8 @@
 {
     public class JoinProtocol
     {
+        public static readonly byte JOIN_CLIENT_ID = 0;
+        
         public static byte[] SerializeJoinRequestMessage(JoinRequestMessage message)
         {
             var serializedMessage = new byte[1];

@@ -36,12 +36,29 @@ namespace Protocols
 
         public static byte[] SerializeServerToClientMessage(ServerToClientMessage message)
         {
-            throw new NotImplementedException();
+            using (MemoryStream m = new MemoryStream())
+            {
+                using (BinaryWriter writer = new BinaryWriter(m))
+                {
+                    writer.Write(message.StreamId);
+                    writer.Write(message.Payload);
+                }
+                return m.ToArray();
+            }
         }
         
         public static ServerToClientMessage DeserializeServerToClientMessage(byte[] data)
         {
-            throw new NotImplementedException();
+            ServerToClientMessage result = new ServerToClientMessage();
+            using (MemoryStream m = new MemoryStream(data))
+            {
+                using (BinaryReader reader = new BinaryReader(m))
+                {
+                    result.StreamId = reader.ReadByte();
+                    result.Payload = reader.ReadBytes(data.Length - 1);    // TODO: change for "m.Length - m.Position" or similar
+                }
+            }
+            return result;
         }
         
         public class ClientToServerMessage

@@ -1,16 +1,18 @@
-﻿using Streams;
+﻿using System.Net;
+using JetBrains.Annotations;
+using Streams;
 using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
-    private IStream _stream;
+    private IStream<IPEndPoint> _stream;
     
     void Start()
     {
         
     }
 
-    public void SetStream(IStream stream)
+    public void SetStream(IStream<IPEndPoint> stream)
     {
         _stream = stream;
     }
