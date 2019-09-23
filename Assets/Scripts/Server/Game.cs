@@ -38,6 +38,7 @@ namespace Server
         
         public void Start()
         {
+            Debug.Log("ServerGame: Starting server...");
             Destroy(GameObject.FindGameObjectWithTag("Player"));
             _connection = new Connection(_serverPort);
             _packetProcessor = new PacketProcessor(_connection);
@@ -57,12 +58,22 @@ namespace Server
                 JoinRequestMessage joinRequestMessage = JoinProtocol.DeserializeJoinRequestMessage(serializedJoinRequestMessageWithMetadata.Item1);
                 IPEndPoint endpoint = serializedJoinRequestMessageWithMetadata.Item2;
                 byte clientId = _nextClientId++;
+                Debug.Log($"ServerGame: Received join request from: {endpoint}\tAssigning client ID {clientId}");
                 _packetProcessor.RegisterClient(clientId, endpoint);
                 UnreliableStream<IPEndPoint> unreliableStream = new UnreliableStream<IPEndPoint>();
                 ReliableFastStream<IPEndPoint> reliableFastStream = new ReliableFastStream<IPEndPoint>();
                 ReliableSlowStream<IPEndPoint> reliableSlowStream = new ReliableSlowStream<IPEndPoint>();
                 _packetProcessor.RegisterStream(clientId, unreliableStream, reliableFastStream, reliableSlowStream);
-                _clientsInfo.Add(clientId, new ClientInfo {Joined = false, SnapshotStream = unreliableStream, InputStream = reliableFastStream, JoinStream = reliableFastStream});
+                var newClientInfo = new ClientInfo
+                {
+                    Joined = false,
+                    SnapshotStream = unreliableStream,
+                    InputStream = reliableFastStream,
+                    JoinStream = reliableSlowStream
+                };
+                _clientsInfo.Add(clientId, newClientInfo);
+                newClientInfo.JoinStream.SendMessage(JoinProtocol.SerializeJoinResponseMessage(new JoinResponseMessage() {ClientId = clientId}));
+                Debug.Log($"ServerGame: Sent client response message for client ID {clientId}");
             }
 
             // Process join accepts
@@ -80,6 +91,7 @@ namespace Server
                     _joinedPlayersCount++;
                     GameObject newPlayer = Instantiate(_playerPrefab, new Vector3(0,0,0), Quaternion.identity);
                     info.PlayerTransform = newPlayer.GetComponent<Transform>();
+                    Debug.Log($"ServerGame: Received join accept message from client {clientId}");
                     break;
                 }
             }
@@ -100,10 +112,20 @@ namespace Server
                     switch (direction)
                     {
                         case MovementProtocol.Direction.Up:
+                            Debug.Log($"Received UP direction input for client {clientId}");
                             delta = Vector3.forward;
                             break;
                         case MovementProtocol.Direction.Down:
+                            Debug.Log($"Received DOWN direction input for client {clientId}");
                             delta = Vector3.back;
+                            break;
+                        case MovementProtocol.Direction.Left:
+                            Debug.Log($"Received LEFT direction input for client {clientId}");
+                            delta = Vector3.left;
+                            break;
+                        case MovementProtocol.Direction.Right:
+                            Debug.Log($"Received RIGHT direction input for client {clientId}");
+                            delta = Vector3.right;
                             break;
                         default:
                             throw new Exception("Unknown direction");
@@ -112,6 +134,7 @@ namespace Server
                     position.Set(position.x + delta.x,
                         position.y + delta.y,
                         position.z + delta.z);
+                    info.PlayerTransform.SetPositionAndRotation(position, Quaternion.identity);
                 }
             }
 
@@ -123,8 +146,7 @@ namespace Server
                 byte clientId = clientInfo.Key;
                 ClientInfo info = clientInfo.Value;
                 if (!info.Joined) continue;
-                var playerInfo = new GameProtocol.SnapshotMessage.SinglePlayerInfo();
-                playerInfo.ClientId = clientId;
+                var playerInfo = new GameProtocol.SnapshotMessage.SinglePlayerInfo {ClientId = clientId};
                 var transform = info.PlayerTransform;
                 playerInfo.Position = transform.position;
                 playerInfo.Rotation = transform.rotation;

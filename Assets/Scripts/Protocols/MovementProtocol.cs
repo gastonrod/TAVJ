@@ -4,7 +4,7 @@ namespace Protocols
 {
     public class MovementProtocol
     {
-        public enum Direction : byte {Up = 1, Down = 2}
+        public enum Direction : byte {Up = 1, Down = 2, Left = 3, Right = 4}
         
         public static byte[] Serialize(Direction direction)
         {

@@ -44,6 +44,7 @@ namespace Client
         
         public void Start()
         {
+            Debug.Log("ClientGame: Starting client");
             _serverAddress = IPAddress.Parse(_stringServerAddress);
             _connection = new Connection(_serverAddress, _clientPort, _serverPort);
             _packetProcessor = new PacketProcessor(_connection);
@@ -55,7 +56,7 @@ namespace Client
             _packetProcessor.RegisterStream(_unreliableStream);
             _packetProcessor.RegisterStream(_reliableFastStream);
             _packetProcessor.RegisterStream(_reliableSlowStream);
-            _reliableSlowStream.SendMessage(JoinProtocol.SerializeJoinRequestMessage(new JoinRequestMessage()));
+            RequestJoin();
             _state = State.JOIN_REQUESTED;
         }
     
@@ -80,6 +81,12 @@ namespace Client
             }
         }
 
+        private void RequestJoin()
+        {
+            _reliableSlowStream.SendMessage(JoinProtocol.SerializeJoinRequestMessage(new JoinRequestMessage()));
+            Debug.Log($"ClientGame: join requested");
+        }
+        
         private void JoinRequestedUpdate()
         {
             IList<(byte[], IPEndPoint)> messagesWithMetadata = _reliableSlowStream.ReceiveMessages();
@@ -88,9 +95,10 @@ namespace Client
                 var message = messageWithMetadata.Item1;
                 var joinResponseMessage = JoinProtocol.DeserializeJoinAcceptMessage(message);
                 _clientId = joinResponseMessage.ClientId;
+                Debug.Log($"ClientGame: received join response message with client ID {_clientId}");
                 _packetProcessor.SetClientId(_clientId);
                 _reliableSlowStream.SendMessage(JoinProtocol.SerializeJoinAcceptMessage(new JoinAcceptMessage {ClientId = _clientId}));
-                // ReSharper disable once Unity.PerformanceCriticalCodeInvocation
+                Debug.Log($"ClientGame: sent join accept message with client ID {_clientId}");
                 players.Add(_clientId, _playerGameObject.GetComponent<Transform>());
                 _state = State.JOINED;
                 _playerController.SetStream(_reliableFastStream);
@@ -105,7 +113,6 @@ namespace Client
             {
                 var message = messageWithMetadata.Item1;
                 var snapshot = GameProtocol.DeserializeSnapshotMessage(message);
-                // ReSharper disable once Unity.PerformanceCriticalCodeInvocation
                 ApplySnapshot(snapshot);
             }
         }
@@ -122,7 +129,6 @@ namespace Client
                 else
                 {
                     GameObject currentPlayerGameObject = Instantiate(_playerPrefab, currentPlayerInfo.Position, currentPlayerInfo.Rotation);
-                    // ReSharper disable once Unity.PerformanceCriticalCodeInvocation
                     players.Add(currentPlayerInfo.ClientId, currentPlayerGameObject.GetComponent<Transform>());
                 }
             }

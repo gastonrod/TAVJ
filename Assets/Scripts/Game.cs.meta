@@ -3,7 +3,9 @@ guid: fb0039554b61f3245b16c82963079600
 MonoImporter:
   externalObjects: {}
   serializedVersion: 2
-  defaultReferences: []
+  defaultReferences:
+  - ServerPlayerPrefab: {instanceID: 0}
+  - ClientPlayerPrefab: {instanceID: 0}
   executionOrder: 0
   icon: {instanceID: 0}
   userData: 

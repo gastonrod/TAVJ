@@ -38,13 +38,12 @@ namespace Protocols
                 {
                     for (int i = 0; i < PLAYERS_COUNT; i++)
                     {
-                        result.PlayersInfo[i].ClientId = reader.ReadByte();
-                        result.PlayersInfo[i].Position.x = reader.ReadSingle();
-                        result.PlayersInfo[i].Position.y = reader.ReadSingle();
-                        result.PlayersInfo[i].Position.z = reader.ReadSingle();
-                        result.PlayersInfo[i].Rotation.x = reader.ReadSingle();
-                        result.PlayersInfo[i].Rotation.y = reader.ReadSingle();
-                        result.PlayersInfo[i].Rotation.z = reader.ReadSingle();
+                        result.PlayersInfo[i] = new SnapshotMessage.SinglePlayerInfo
+                        {
+                            ClientId = reader.ReadByte(),
+                            Position = {x = reader.ReadSingle(), y = reader.ReadSingle(), z = reader.ReadSingle()},
+                            Rotation = {x = reader.ReadSingle(), y = reader.ReadSingle(), z = reader.ReadSingle()}
+                        };
                     }
                 }
             }
