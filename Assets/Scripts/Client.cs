@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net;
+using System.Runtime.InteropServices.WindowsRuntime;
 using Connections;
 using Connections.Loggers;
 using Connections.Streams;
+using Interpolation;
 using UnityEngine;
 using ILogger = Connections.Loggers.ILogger;
 
@@ -11,46 +13,82 @@ public class Client : MonoBehaviour
 {
     public static ConnectionClasses _connectionClasses;
     // Server IP
-    public static readonly string ipAddressString = "127.0.1.1";
-    public static readonly int sourcePort = 6969;
+    public string ipAddressString = "127.0.1.1";
+    public int sourcePort = 6969;
     // Server port
-    public static readonly int destinationPort = 9696;
-    public static readonly byte clientId = 77;
+    public int destinationPort = 9696;
+    public byte clientId = 77;
     public static byte playerId;
     // Server IP+port
-    public static readonly IPEndPoint ipEndPoint = new IPEndPoint(IPAddress.Parse(ipAddressString), destinationPort);
+    public static IPEndPoint ipEndPoint;
 
     private GameObject[] _gameObjects = new GameObject[byte.MaxValue];
-    private byte currentSnapshotID = 0;
-    private byte[][] _snapshots = new byte[4][];
     private ILogger _logger = new ClientLogger();
     private Vector3 offset = new Vector3(1,0,1);
-    private Color playerColor = Color.red; 
+    private Color playerColor = Color.red;
+    private FramesStorer _framesStorer;
     
+    public int frameRate = 60;
     public int messageRate = 10;
     private int _msBetweenMessages;
-    private int _acumTime;
+    private int _msBetweenFrames;
+    private int _acumTimeMessages;
+    private int _acumTimeFrames;
     
     void Start()
     {
+        _framesStorer = new FramesStorer();
+        ipEndPoint = new IPEndPoint(IPAddress.Parse(ipAddressString), destinationPort);
         _connectionClasses = Utils.GetConnectionClasses(sourcePort, destinationPort, _logger);
         _connectionClasses.rss.InitConnection(clientId, ipEndPoint);
         _msBetweenMessages = 1000 / messageRate;
-        _connectionClasses = Utils.GetConnectionClasses(sourcePort, destinationPort, _logger);
+        _msBetweenFrames = 1000 / frameRate;
     }
 
     void Update()
     {
         int deltaTimeInMs = (int)(1000 * Time.deltaTime);
-        _acumTime += deltaTimeInMs;
-        if (_acumTime > _msBetweenMessages)
+        _acumTimeMessages += deltaTimeInMs;
+        _acumTimeFrames += deltaTimeInMs;
+
+        if (_acumTimeMessages > _msBetweenMessages)
         {
+            _acumTimeMessages = _acumTimeMessages % _msBetweenMessages;
             _connectionClasses.pp.Update();
             if (!_gameObjects[playerId])
             {
                 ReceiveCharacterId();
             }
             ReceivePositions();
+        }
+        if (_acumTimeFrames > _msBetweenFrames)
+        {
+            _acumTimeFrames = _acumTimeFrames % _msBetweenFrames;
+            UpdatePositions();
+        }
+    }
+
+    private void UpdatePositions()
+    {
+        byte[] snapshot = _framesStorer.GetNextFrame();
+        if (snapshot == null)
+        {
+            return;
+        }
+        for (int j = 1; j < snapshot.Length; j++)
+        {
+            int i = snapshot[j];
+            if (!_gameObjects[i])
+            {
+                SpawnObject(snapshot, j);
+                j += UnreliableStream.PACKET_SIZE;
+            }
+            else
+            {
+                j+=2;
+                _gameObjects[i].transform.position = Utils.ByteArrayToVector3(snapshot, j) + offset;
+                j += 12;
+            }
         }
     }
 
@@ -60,50 +98,19 @@ public class Client : MonoBehaviour
         if (receivedData.Count > 0)
         {
             byte[] message = receivedData.Dequeue().message;
-            byte snapshotID = message[0];
-            if (snapshotID <= currentSnapshotID && Math.Abs(snapshotID-currentSnapshotID) < 10)
+            if (message != null && message.Length > 0)
             {
-                _logger.Log("discarding snapshot.");
-                return;
-            }
-            currentSnapshotID = snapshotID;
-            _logger.Log("Snapshot ID:" + snapshotID);
-            for (int i = 0; i < _gameObjects.Length; i++)
-            {
-                int j = i * UnreliableStream.PACKET_SIZE+1;
-                if (!_gameObjects[i])
-                {
-                    bool isEmpty = true;
-                    for (; j < UnreliableStream.PACKET_SIZE; j++)
-                    {
-                        if (message[j] != 0)
-                        {
-                            isEmpty = false;
-                            break;
-                        }
-                    }
-
-                    if (!isEmpty)
-                    {
-                        SpawnObject(message, i);
-                    }
-                }
-                else
-                {
-                    // Skip over item id and item type, only important when spawning the item.
-                    j+=2;
-                    _gameObjects[i].transform.position = Utils.ByteArrayToVector3(message, j) + offset;
-                }
+                _framesStorer.StoreFrame(message);
             }
         }
     }
 
-    private void SpawnObject(byte[] message, int i)
+    private void SpawnObject(byte[] message, int j)
     {
-        byte id = (byte)i++;
-        PrimitiveType primitiveType = (PrimitiveType)message[i++];
+        byte id = message[j++];
+        PrimitiveType primitiveType = (PrimitiveType)message[j++];
         GameObject gameObject = GameObject.CreatePrimitive(primitiveType);
-        Vector3 pos = Utils.ByteArrayToVector3(message, i);
+        Vector3 pos = Utils.ByteArrayToVector3(message, j);
         gameObject.transform.position = pos;
         _gameObjects[id] = gameObject;
     }

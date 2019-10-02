@@ -8,6 +8,10 @@ namespace Connections
     public class Utils
     {
 
+        public static ConnectionClasses GetConnectionClasses(int sourcePort, ILogger logger)
+        {
+            return new ConnectionClasses(sourcePort, logger);
+        }
         public static ConnectionClasses GetConnectionClasses(int sourcePort, int destinationPort, ILogger logger)
         {
             return new ConnectionClasses(sourcePort, destinationPort, logger);
@@ -45,17 +49,24 @@ namespace Connections
         
         public static void Vector3ToByteArray(Vector3 v3, byte[] buffer, int startingIdx)
         {
-            Buffer.BlockCopy( BitConverter.GetBytes( v3.x ), 0, buffer, (startingIdx++)*sizeof(float), sizeof(float));
-            Buffer.BlockCopy( BitConverter.GetBytes( v3.y ), 0, buffer, (startingIdx++)*sizeof(float), sizeof(float));
-            Buffer.BlockCopy( BitConverter.GetBytes( v3.z ), 0, buffer, (startingIdx)*sizeof(float), sizeof(float));
+            Buffer.BlockCopy( BitConverter.GetBytes( v3.x ), 0, buffer, startingIdx, sizeof(float));
+            startingIdx += sizeof(float);
+            Buffer.BlockCopy( BitConverter.GetBytes( v3.y ), 0, buffer, startingIdx, sizeof(float));
+            startingIdx += sizeof(float);
+            Buffer.BlockCopy( BitConverter.GetBytes( v3.z ), 0, buffer, startingIdx, sizeof(float));
+//            Buffer.BlockCopy( BitConverter.GetBytes( v3.x ), 0, buffer, (startingIdx++)*sizeof(float), sizeof(float));
+//            Buffer.BlockCopy( BitConverter.GetBytes( v3.y ), 0, buffer, (startingIdx++)*sizeof(float), sizeof(float));
+//            Buffer.BlockCopy( BitConverter.GetBytes( v3.z ), 0, buffer, (startingIdx)*sizeof(float), sizeof(float));
         }
         
-        public static Vector3 ByteArrayToVector3(byte[] bytes, int startingIdx)
+        public static Vector3 ByteArrayToVector3(byte[] bytes, int idx)
         {
             Vector3 vect = Vector3.zero;
-            vect.x = BitConverter.ToSingle(bytes, (startingIdx++) * sizeof(float));
-            vect.y = BitConverter.ToSingle(bytes, (startingIdx++) * sizeof(float));
-            vect.z = BitConverter.ToSingle(bytes, (startingIdx) * sizeof(float));
+            vect.x = BitConverter.ToSingle(bytes, idx);
+            idx += sizeof(float);
+            vect.y = BitConverter.ToSingle(bytes, idx);
+            idx += sizeof(float);
+            vect.z = BitConverter.ToSingle(bytes, idx);
             return vect;
         }
 

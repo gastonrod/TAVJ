@@ -10,6 +10,14 @@ namespace Connections
         public UnreliableStream us;
         public PacketProcessor pp;
         
+        public ConnectionClasses(int sourcePort, ILogger logger)
+        {
+            Connection connection = new Connection(sourcePort, 1);
+            rss = new ReliableSlowStream(logger);
+            rfs = new ReliableFastStream(logger);
+            us = new UnreliableStream(logger);
+            pp  = new PacketProcessor(connection, rss, rfs, us, logger);
+        }
         public ConnectionClasses(int sourcePort, int destinationPort, ILogger logger)
         {
             Connection connection = new Connection(sourcePort, 1);

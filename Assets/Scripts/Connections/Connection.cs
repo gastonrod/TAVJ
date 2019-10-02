@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
+using UnityEngine;
 
 namespace Connections
 {
@@ -22,14 +23,16 @@ namespace Connections
                 {
                     byte[] receivedMessage = udpClient.Receive(ref RemoteIpEndPoint);
                     byte[] address = RemoteIpEndPoint.Address.GetAddressBytes();
-                    byte[] message = new byte[receivedMessage.Length + 4];
-                    
+                    byte[] message = new byte[receivedMessage.Length + 6];
                     /*
-                     *  |     4B    |    xB   |
-                     *  | IPAddress | Message |
+                     *  |     4B    |  2B  |    xB   |
+                     *  | IPAddress | Port | Message |
                      */
                     Array.Copy(address, 0, message, 0, 4);
-                    Array.Copy(receivedMessage, 0, message, 4, receivedMessage.Length);
+                    message[4] = (byte) RemoteIpEndPoint.Port;
+                    message[5] = (byte) (RemoteIpEndPoint.Port>> 8);
+                    Array.Copy(receivedMessage, 0, message, 6, receivedMessage.Length);
+                    
                     lock (messages)
                     {
                         messages.Enqueue(message);

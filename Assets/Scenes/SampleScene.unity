@@ -385,8 +385,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   sourcePort: 9696
-  destinationPort: 6969
-  messageRate: 20
+  messageRate: 3
+  movementSpeed: 10
 --- !u!4 &605503976
 Transform:
   m_ObjectHideFlags: 0
@@ -430,7 +430,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c4ea1b071a41fc7479a1fa8d747c9f8a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  messageRate: 20
+  ipAddressString: 127.0.1.1
+  sourcePort: 1111
+  destinationPort: 9696
+  clientId: 77
+  frameRate: 5
+  messageRate: 3
 --- !u!4 &1019445291
 Transform:
   m_ObjectHideFlags: 0
@@ -474,7 +479,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 766d9f7b69c07214b8338de6d2ce8769, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  movementSpeed: 1
 --- !u!4 &1628830741
 Transform:
   m_ObjectHideFlags: 0

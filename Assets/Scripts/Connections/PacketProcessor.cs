@@ -12,6 +12,14 @@ namespace Connections
         private Connection _connection;
         private IStream[] _streams;
         private ILogger _logger;
+
+        public PacketProcessor(Connection connection, ReliableSlowStream rss, ReliableFastStream rfs, UnreliableStream us, ILogger logger)
+        {
+            _connection = connection;
+            _destinationPort = -1;
+            _streams = new IStream[]{rss, rfs, us};
+            _logger = logger;
+        }
         public PacketProcessor(Connection connection, int destinationPort, ReliableSlowStream rss, ReliableFastStream rfs, UnreliableStream us, ILogger logger)
         {
             _connection = connection;
@@ -19,7 +27,6 @@ namespace Connections
             _streams = new IStream[]{rss, rfs, us};
             _logger = logger;
         }
-
         public void Update()
         {
             ReceiveMessages();
@@ -57,30 +64,39 @@ namespace Connections
 
         private void ReceiveMessages()
         {
-            byte[] receivedData = _connection.ReceiveData();
-            if (receivedData != null && receivedData.Length > 0)
+            for(byte[] receivedData = _connection.ReceiveData();receivedData != null && receivedData.Length > 0; receivedData = _connection.ReceiveData())
             {
-                for (int i = 0; i < receivedData.Length;)
                 {
-                    // The IP Address is attached at Connection level. I unpack it here. Maybe do it in connection?
-                    byte[] ipAddress = {receivedData[i], receivedData[i+1], receivedData[i+2], receivedData[i+3]};
-                    i += 4;
-                    byte streamID = receivedData[i++];
-                    
-                    // Transform 2 bytes into message size
-                    int messageSize = BitConverter.ToInt16(receivedData, i);
-                    i += 2;
-                    
-                    // Build the IPDataPacket
-                    byte[] message = new byte[messageSize];
-                    IPEndPoint ipEndPoint = new IPEndPoint(new IPAddress(ipAddress), _destinationPort);
-                    Array.Copy(receivedData, i, message, 0, messageSize);
-                    i += messageSize;
-                    IPDataPacket ipDataPacket = new IPDataPacket(ipEndPoint, message);
-                    
-                    _streams[streamID].SaveReceivedData(ipDataPacket);
+                    for (int i = 0; i < receivedData.Length;)
+                    {
+                        // The IP Address is attached at Connection level. I unpack it here. Maybe do it in connection?
+                        byte[] ipAddress =
+                            {receivedData[i], receivedData[i + 1], receivedData[i + 2], receivedData[i + 3]};
+                        i += 4;
+                        int destPort = _destinationPort;
+                        if (_destinationPort == -1)
+                        {
+                            destPort = BitConverter.ToInt16(receivedData, i);
+                        }
+
+                        i += 2;
+                        byte streamID = receivedData[i++];
+
+                        // Transform 2 bytes into message size
+                        int messageSize = BitConverter.ToInt16(receivedData, i);
+                        i += 2;
+
+                        // Build the IPDataPacket
+                        byte[] message = new byte[messageSize];
+                        IPEndPoint ipEndPoint = new IPEndPoint(new IPAddress(ipAddress), destPort);
+                        Array.Copy(receivedData, i, message, 0, messageSize);
+                        i += messageSize;
+                        IPDataPacket ipDataPacket = new IPDataPacket(ipEndPoint, message);
+                        _streams[streamID].SaveReceivedData(ipDataPacket);
+                    }
                 }
             }
+            
         }
     }
 }

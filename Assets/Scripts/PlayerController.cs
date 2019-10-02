@@ -5,14 +5,8 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
-    public float movementSpeed= 1;
-
     private ReliableFastStream _reliableFastStream;
     private IPEndPoint _ipEndPoint;
-    void Start()
-    {
-    }
-
     void Update()
     {
         if (_reliableFastStream == null)
