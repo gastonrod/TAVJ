@@ -3,6 +3,7 @@ using System.Net;
 using Connections;
 using Connections.Loggers;
 using Connections.Streams;
+using DefaultNamespace;
 using UnityEngine;
 using ILogger = Connections.Loggers.ILogger;
 
@@ -13,22 +14,19 @@ public class Server : MonoBehaviour
     public int sourcePort = 9696;
     private ILogger _logger = new ServerLogger();
     private List<IPEndPoint> connectedClients = new List<IPEndPoint>();
-    
-    private GameObject[] gameObjects = new GameObject[byte.MaxValue];
-    private byte gameObjectsCount = 0;
-    private byte[] gameObjectTypes = new byte[byte.MaxValue];
-    private byte lastGameObjectID = 0;
-    private byte snapshotID = 0;
+
+    private WorldController _worldController;
+    private byte snapshotId = 0;
 
     // How many messages per second.
     public int messageRate = 10;
     private int _msBetweenMessages;
     private int _acumTime;
 
-    public int movementSpeed = 1;
     
     void Start()
     {
+        _worldController = new WorldController();
         _msBetweenMessages = 1000 / messageRate;
         _connectionClasses = Utils.GetConnectionClasses(sourcePort, _logger);
     }
@@ -49,19 +47,7 @@ public class Server : MonoBehaviour
 
     private void SendPositions()
     {
-        byte[] positions = new byte[gameObjectsCount * UnreliableStream.PACKET_SIZE + 1];
-        positions[0] = snapshotID++;
-        for (int i = 0, j = 1; i < gameObjects.Length; i++)
-        {
-            if (!gameObjects[i])
-            {
-                continue;
-            }
-            positions[j++] = (byte)i;
-            positions[j++] = gameObjectTypes[i];
-            Utils.Vector3ToByteArray(gameObjects[i].transform.position, positions, j);
-            j += 12;
-        }
+        byte[] positions = _worldController.GetPositions(snapshotId++, UnreliableStream.PACKET_SIZE);
         foreach(IPEndPoint clientIp in connectedClients)
         {
             _connectionClasses.us.SaveMessageToSend(positions, clientIp);
@@ -74,7 +60,7 @@ public class Server : MonoBehaviour
         {
             IPDataPacket ipDataPacket = queue.Dequeue();
             byte[] msg = ipDataPacket.message;
-            gameObjects[msg[0]].transform.position += Utils.DecodeInput(msg[1]) * movementSpeed;
+            _worldController.MovePlayer(msg[0], Utils.DecodeInput(msg[1]));
         }
     }
 
@@ -88,19 +74,8 @@ public class Server : MonoBehaviour
             byte[] msg = ipDataPacket.message;
             if (msg != null && msg.Length > 0)
             {
-                SpawnCharacter();
-                _connectionClasses.rss.SpawnPlayer(lastGameObjectID++, ipDataPacket.ip);
+                _connectionClasses.rss.SpawnPlayer(_worldController.SpawnCharacter(), _worldController.GetMovementSpeed(), ipDataPacket.ip);
             }
         }
-    }
-
-    private void SpawnCharacter()
-    {
-         GameObject capsule = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-         Vector3 pos = new Vector3(5, 0, 0);
-         capsule.transform.position = pos;
-         gameObjects[lastGameObjectID] = capsule;
-         gameObjectTypes[lastGameObjectID] = (byte)PrimitiveType.Capsule;
-         gameObjectsCount++;
     }
 }

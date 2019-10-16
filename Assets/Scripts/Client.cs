@@ -5,6 +5,7 @@ using System.Runtime.InteropServices.WindowsRuntime;
 using Connections;
 using Connections.Loggers;
 using Connections.Streams;
+using DefaultNamespace;
 using Interpolation;
 using UnityEngine;
 using ILogger = Connections.Loggers.ILogger;
@@ -18,7 +19,6 @@ public class Client : MonoBehaviour
     // Server port
     public int destinationPort = 9696;
     public byte clientId = 77;
-    public static byte playerId;
     // Server IP+port
     public static IPEndPoint ipEndPoint;
 
@@ -27,6 +27,7 @@ public class Client : MonoBehaviour
     private Vector3 offset = new Vector3(1,0,1);
     private Color playerColor = Color.red;
     private FramesStorer _framesStorer;
+    private WorldController _worldController;
     
     public int frameRate = 60;
     public int messageRate = 10;
@@ -38,6 +39,7 @@ public class Client : MonoBehaviour
     void Start()
     {
         _framesStorer = new FramesStorer();
+        _worldController = new WorldController(offset, _framesStorer);
         ipEndPoint = new IPEndPoint(IPAddress.Parse(ipAddressString), destinationPort);
         _connectionClasses = Utils.GetConnectionClasses(sourcePort, destinationPort, _logger);
         _connectionClasses.rss.InitConnection(clientId, ipEndPoint);
@@ -55,7 +57,7 @@ public class Client : MonoBehaviour
         {
             _acumTimeMessages = _acumTimeMessages % _msBetweenMessages;
             _connectionClasses.pp.Update();
-            if (!_gameObjects[playerId])
+            if (!_worldController.ClientSetPlayer())
             {
                 ReceiveCharacterId();
             }
@@ -75,21 +77,8 @@ public class Client : MonoBehaviour
         {
             return;
         }
-        for (int j = 1; j < snapshot.Length; j++)
-        {
-            int i = snapshot[j];
-            if (!_gameObjects[i])
-            {
-                SpawnObject(snapshot, j);
-                j += UnreliableStream.PACKET_SIZE;
-            }
-            else
-            {
-                j+=2;
-                _gameObjects[i].transform.position = Utils.ByteArrayToVector3(snapshot, j) + offset;
-                j += 12;
-            }
-        }
+
+        _worldController.SetPositions(snapshot);
     }
 
     private void ReceivePositions()
@@ -109,8 +98,8 @@ public class Client : MonoBehaviour
     {
         byte id = message[j++];
         PrimitiveType primitiveType = (PrimitiveType)message[j++];
-        GameObject gameObject = GameObject.CreatePrimitive(primitiveType);
         Vector3 pos = Utils.ByteArrayToVector3(message, j);
+        GameObject gameObject = GameObject.CreatePrimitive(primitiveType);
         gameObject.transform.position = pos;
         _gameObjects[id] = gameObject;
     }
@@ -121,17 +110,8 @@ public class Client : MonoBehaviour
         while (receivedData.Count > 0)
         {
             byte[] msg = receivedData.Dequeue().message;
-            playerId = msg[0];
-            SpawnCharacter();
+            PlayerController.SetClientData(msg[0], _worldController);
+            _worldController.SpawnClientPlayer(msg[0], playerColor);
         }
-    }
-
-    private void SpawnCharacter()
-    {
-         GameObject capsule = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-         Vector3 pos = new Vector3(5, 0, 0) + offset;
-         capsule.transform.position = pos;
-         capsule.GetComponent<Renderer>().material.color = playerColor;
-         _gameObjects[playerId] = capsule;
     }
 }

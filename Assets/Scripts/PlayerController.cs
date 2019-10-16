@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using Connections;
 using Connections.Streams;
 using DefaultNamespace;
 using UnityEngine;
@@ -7,6 +8,10 @@ public class PlayerController : MonoBehaviour
 {
     private ReliableFastStream _reliableFastStream;
     private IPEndPoint _ipEndPoint;
+    private static byte _playerId;
+    private static WorldController _worldController;
+    
+    
     void Update()
     {
         if (_reliableFastStream == null)
@@ -38,7 +43,14 @@ public class PlayerController : MonoBehaviour
 
         if (input != 0)
         {
-            _reliableFastStream.SendInput(input, Client.playerId, _ipEndPoint);
+            _reliableFastStream.SendInput(input, _playerId, _ipEndPoint);
+            _worldController.PredictMovePlayer(_playerId, Utils.DecodeInput(input), UnreliableStream.PACKET_SIZE);
         }
+    }
+
+    public static void SetClientData(byte playerId, WorldController worldController)
+    {
+        _playerId = playerId;
+        _worldController = worldController;
     }
 }

@@ -8,7 +8,7 @@ namespace Connections.Streams
     public class ReliableSlowStream : IStream
     {
         private ILogger _logger;
-        private byte _lastPacketID = 0;
+        private byte _lastPacketId = 0;
         private Dictionary<byte, IPDataPacket> messagesNotAcked = new Dictionary<byte, IPDataPacket>();
 
         public ReliableSlowStream(ILogger logger)
@@ -41,19 +41,25 @@ namespace Connections.Streams
         public void SaveReceivedData(IPDataPacket data)
         {
             byte[] message = data.message;
-            byte packetID = message[0];
+            byte packetId = message[0];
             switch (message[1])
             {
-                case (byte)PacketTypes.SPAWNED_PLAYER:
+                case (byte) PacketTypes.SPAWNED_PLAYER:
+                    EnqueueGottenMessage( new byte[]{message[2], message[3]}, packetId, data.ip);
+                    break;
                 case (byte)PacketTypes.INIT_CONNECTION:
-                    SendAck(packetID, data.ip);
-                    byte[] decapsulatedMessage = {message[2]};
-                    messagesToReceive.Enqueue(new IPDataPacket(data.ip, decapsulatedMessage));
+                    EnqueueGottenMessage( new byte[]{message[2]}, packetId, data.ip);
                     break;
                 case (byte)PacketTypes.ACK:
-                    messagesNotAcked.Remove(packetID);
+                    messagesNotAcked.Remove(packetId);
                     break;
             }
+        }
+
+        private void EnqueueGottenMessage(byte[] decapsulatedMessage, byte packetId, IPEndPoint ip)
+        {
+            SendAck(packetId, ip);
+            messagesToReceive.Enqueue(new IPDataPacket(ip, decapsulatedMessage));
         }
 
         public Queue<IPDataPacket> GetReceivedData()
@@ -61,21 +67,21 @@ namespace Connections.Streams
             return messagesToReceive;
         }
 
-        public void InitConnection(byte clientID, IPEndPoint ip)
+        public void InitConnection(byte clientId, IPEndPoint ip)
         {
-            byte[] message = {_lastPacketID++, (byte) PacketTypes.INIT_CONNECTION, clientID};
+            byte[] message = {_lastPacketId++, (byte) PacketTypes.INIT_CONNECTION, clientId};
             SaveMessageToSend(message, ip);
         }
 
-        public void SpawnPlayer(byte objectID, IPEndPoint ip)
+        public void SpawnPlayer(byte objectId, byte movementSpeed, IPEndPoint ip)
         {
-            byte[] message = {_lastPacketID++, (byte) PacketTypes.SPAWNED_PLAYER, objectID};
+            byte[] message = {_lastPacketId++, (byte) PacketTypes.SPAWNED_PLAYER, objectId, movementSpeed};
             SaveMessageToSend(message, ip);
         }
         
-        public void SendAck(byte packetID, IPEndPoint ip)
+        private void SendAck(byte packetId, IPEndPoint ip)
         {
-            byte[] ack =  {packetID, (byte)PacketTypes.ACK};
+            byte[] ack =  {packetId, (byte)PacketTypes.ACK};
             SaveMessageToSend(ack, ip);
         }
     }

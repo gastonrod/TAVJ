@@ -36,7 +36,7 @@ namespace Interpolation
             return nextFrame;
         }
         
-        public void StoreFrame(byte[] snapshot)
+        public void StoreFrame(byte[] snapshot, bool bypassDiscard = false)
         {
             byte snapshotID = snapshot[0];
             if (IsDiscardable(snapshotID))
@@ -44,7 +44,7 @@ namespace Interpolation
                 Debug.Log("Discarding snapshot.");
                 return;
             }
-            // Frame skipped or not, it's the same for now.
+            // Frame skipped or not, it's the same.
             int i = GetLastFrame();
             if (i + 1 >= interpolatedFrames.Length)
             {
@@ -104,6 +104,11 @@ namespace Interpolation
                 return false;
             byte currentSnapshotId = interpolatedFrames[i][0];
             return snapshotId <= currentSnapshotId && Math.Abs(snapshotId - currentSnapshotId) < 10;
+        }
+
+        public byte CurrentSnapshotID()
+        {
+            return interpolatedFrames[GetLastFrame()][0];
         }
     }
 }
