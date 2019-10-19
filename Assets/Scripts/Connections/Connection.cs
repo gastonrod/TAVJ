@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
-using UnityEngine;
+using Random = System.Random;
 
 namespace Connections
 {
@@ -13,12 +13,13 @@ namespace Connections
         private readonly UdpClient udpClient;
 
 
-        public Connection(int port, int pktLossPct)
+        public Connection(int port, int delayInMs = 0, int pktLossPct = 0)
         {
             udpClient = new UdpClient(port);
             var RemoteIpEndPoint = new IPEndPoint(IPAddress.Any, Int16.MaxValue);
             new Thread(() =>
             {
+                Random rand = new Random();
                 while (true)
                 {
                     byte[] receivedMessage = udpClient.Receive(ref RemoteIpEndPoint);
@@ -32,7 +33,14 @@ namespace Connections
                     message[4] = (byte) RemoteIpEndPoint.Port;
                     message[5] = (byte) (RemoteIpEndPoint.Port>> 8);
                     Array.Copy(receivedMessage, 0, message, 6, receivedMessage.Length);
-                    
+                    if (delayInMs != 0)
+                    {
+                        if (rand.Next(100) < pktLossPct)
+                        {
+                            continue;
+                        }
+                        Thread.Sleep(delayInMs);
+                    }
                     lock (messages)
                     {
                         messages.Enqueue(message);

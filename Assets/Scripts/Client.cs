@@ -94,24 +94,16 @@ public class Client : MonoBehaviour
         }
     }
 
-    private void SpawnObject(byte[] message, int j)
-    {
-        byte id = message[j++];
-        PrimitiveType primitiveType = (PrimitiveType)message[j++];
-        Vector3 pos = Utils.ByteArrayToVector3(message, j);
-        GameObject gameObject = GameObject.CreatePrimitive(primitiveType);
-        gameObject.transform.position = pos;
-        _gameObjects[id] = gameObject;
-    }
-
     private void ReceiveCharacterId()
     {
         Queue<IPDataPacket> receivedData = _connectionClasses.rss.GetReceivedData();
         while (receivedData.Count > 0)
         {
             byte[] msg = receivedData.Dequeue().message;
-            PlayerController.SetClientData(msg[0], _worldController);
-            _worldController.SpawnClientPlayer(msg[0], playerColor);
+            byte charId = msg[0];
+            PlayerController.SetClientData(charId, _worldController);
+            _worldController.SpawnClientPlayer(charId, playerColor);
+            _framesStorer.SetCharId(charId);
         }
     }
 }

@@ -8,107 +8,164 @@ namespace Interpolation
     public class FramesStorer
     {
         /*
-         *  Frames buffer will have x2 the amount of frames I'll store.
-         *  Lets say we have F0 (frame 0), F1, and F2
-         *  Then the buffer will look like this:
-         *  [F0, F0xF1, F1, F1xF2, F2, @]
+         *  Frames buffer will have the frames I've received
+         *  [F0, F1, F2]
+         *  Then, it will decide if it needs to send out an interpolated frame when it's asked for one, and do it
+         *  on-demand.
          */
         
-        private byte[][] interpolatedFrames;
-        private byte[,] storedFrames;
-        private byte[] framesIDs;
-        private int bufferSize = 3;
-        public FramesStorer()
+        private byte[][] _frames;
+        private int _bufferSize = 3;
+        private byte _charId;
+        private bool _mustInterpolate;
+
+        public FramesStorer(byte charId = byte.MaxValue)
         {
-            interpolatedFrames = new byte[bufferSize*2][];
+            _frames = new byte[_bufferSize][];
+            _charId = charId;
         }
 
         public byte[] GetNextFrame()
         {
-            byte[] nextFrame = interpolatedFrames[0];
-            if (interpolatedFrames[1] == null)
-                return nextFrame;
-            for (int i = 0; i < interpolatedFrames.Length - 1 && interpolatedFrames[i] != null; i++)
+            if (_frames[1] == null)
             {
-                interpolatedFrames[i] = interpolatedFrames[i + 1];
+                _mustInterpolate = true;
+                return _frames[0];
             }
-            interpolatedFrames[interpolatedFrames.Length - 1] = null;
+
+            byte[] nextFrame;
+            if (_mustInterpolate)
+            {
+                nextFrame = Interpolate(_frames[0], _frames[1]);
+                for (int i = 0; i < _frames.Length - 1 && _frames[i] != null; i++)
+                {
+                    _frames[i] = _frames[i + 1];
+                }
+                _frames[_frames.Length - 1] = null;
+            }
+            else
+            {
+                nextFrame = _frames[0];
+            }
+            _mustInterpolate = !_mustInterpolate;
             return nextFrame;
         }
-        
-        public void StoreFrame(byte[] snapshot, bool bypassDiscard = false)
-        {
-            byte snapshotID = snapshot[0];
-            if (IsDiscardable(snapshotID))
-            {
-                Debug.Log("Discarding snapshot.");
-                return;
-            }
-            // Frame skipped or not, it's the same.
-            int i = GetLastFrame();
-            if (i + 1 >= interpolatedFrames.Length)
-            {
-                // Full buffer, what do I do??
-                Debug.Log("Full buffer.");
-                return;
-            }
-            if (i + 2 >= interpolatedFrames.Length)
-            {
-                interpolatedFrames[i + 1] = snapshot;
-                return;
-            }
-            Interpolate(i, snapshot);
-        }
 
-        private void Interpolate(int lastFrameId, byte[] snapshot)
+        private byte[] Interpolate(byte[] frame1, byte[] frame2)
         {
-            byte[] lastFrame = interpolatedFrames[lastFrameId];
-            if (lastFrame == null)
+            byte[] interpolatedFrame = new byte[frame1.Length];
+            interpolatedFrame[0] = frame2[0];
+            for (int j = 1; j < frame1.Length;)
             {
-                interpolatedFrames[lastFrameId] = snapshot;
-                return;
-            }
-            interpolatedFrames[lastFrameId + 2] = snapshot;
-            byte[] interpolatedFrame  = new byte[snapshot.Length];
-            interpolatedFrame[0] = snapshot[0];
-            for (int j = 1; j < snapshot.Length; j++)
-            {
-                interpolatedFrame[j] = snapshot[j];
+                interpolatedFrame[j] = frame2[j];
                 j++;
-                interpolatedFrame[j] = snapshot[j];
+                interpolatedFrame[j] = frame2[j];
                 j++;
-                Vector3 newFramePos = Utils.ByteArrayToVector3(snapshot, j);
-                Vector3 lastFramePos = Utils.ByteArrayToVector3(lastFrame, j);
+                Vector3 newFramePos = Utils.ByteArrayToVector3(frame2, j);
+                Vector3 lastFramePos = Utils.ByteArrayToVector3(frame1, j);
                 Vector3 interpolatedPos = (lastFramePos + newFramePos) / 2;
                 Utils.Vector3ToByteArray(interpolatedPos, interpolatedFrame, j);
-                j += 12;
+                j += UnreliableStream.PACKET_SIZE-2;
             }
-            interpolatedFrames[lastFrameId + 1] = interpolatedFrame;
+
+            return interpolatedFrame;
+        }
+
+        public bool StoreFrame(byte[] snapshot)
+        {
+            // First frame ever
+            if (_frames[0] == null)
+            {
+                _frames[0] = snapshot;
+                return true;
+            }
+            // Check if it is an already stored frame
+            int i = SnapshotIsPredicted(snapshot);
+            if (i != -1)
+            {
+                StoreFrameWithPredicted(snapshot, i);
+                return true;
+            }
+            // If it's not, then store it
+            i = GetLastFrame();
+            bool bufferIsFull = (i == _frames.Length - 1);
+            bool frameIsDiscardable = (Math.Abs(_frames[i][0] - snapshot[0]) < 10 && _frames[i][0] > snapshot[0]);
+            if (bufferIsFull || frameIsDiscardable)
+            {
+                return false;
+            }
+            bool frameIsEqual = Utils.FramesAreEqual(snapshot, _frames[i]);
+            if (frameIsEqual)
+            {
+                _frames[i][0] = snapshot[0];
+                return true;
+            }
+            _frames[i+1] = snapshot;
+            return true;
+        }
+
+        private int SnapshotIsPredicted(byte[] snapshot)
+        {
+            byte snapshotId = snapshot[0];
+            for (int i = 0; i < _frames.Length; i++)
+            {
+                if (_frames[i] == null)
+                    break;
+                if (_frames[i][0] == snapshotId)
+                {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        private void StoreFrameWithPredicted(byte[] snapshot, int i)
+        {
+            byte[] frame = _frames[i];
+            for (int j = 1; j < frame.Length;)
+            {
+                if (frame[j] == _charId)
+                {
+                    j += UnreliableStream.PACKET_SIZE;
+                    continue;
+                }
+                Buffer.BlockCopy(snapshot, j, frame, j, UnreliableStream.PACKET_SIZE);
+                j += UnreliableStream.PACKET_SIZE;
+            }
         }
 
         private int GetLastFrame()
         {
-            int lastIdx = interpolatedFrames.Length - 1;
-            for (int i = 1; i < interpolatedFrames.Length; i++)
+            int lastIdx = _frames.Length - 1;
+            for (int i = 1; i < _frames.Length; i++)
             {
-                if (interpolatedFrames[i] == null)
+                if (_frames[i] == null)
                     return i - 1;
             }
-            return interpolatedFrames[lastIdx] == null ? -1 : lastIdx;
+            return _frames[lastIdx] == null ? lastIdx-1 : lastIdx;
         }
 
-        private bool IsDiscardable(byte snapshotId)
+        public byte CurrentSnapshotId()
         {
-            int i = GetLastFrame();
-            if (i == 0)
-                return false;
-            byte currentSnapshotId = interpolatedFrames[i][0];
-            return snapshotId <= currentSnapshotId && Math.Abs(snapshotId - currentSnapshotId) < 10;
+            return _frames[GetLastFrame()][0];
         }
 
-        public byte CurrentSnapshotID()
+
+        private String FramesToString()
         {
-            return interpolatedFrames[GetLastFrame()][0];
+            String s = "Frames: " + _mustInterpolate + "\n";
+            for (int i = 0; i < _frames.Length; i++)
+            {
+                if (_frames[i] == null)
+                    return s;
+                s += "i: " + Utils.FrameToString(_frames[i]) + "\n";
+            }
+            return s;
+        }
+
+        public void SetCharId(byte charId)
+        {
+            _charId = charId;
         }
     }
 }

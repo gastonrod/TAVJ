@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Net;
+using UnityEngine;
 using ILogger = Connections.Loggers.ILogger;
 
 namespace Connections.Streams
@@ -10,6 +12,9 @@ namespace Connections.Streams
         private ILogger _logger;
         private byte _lastPacketId = 0;
         private Dictionary<byte, IPDataPacket> messagesNotAcked = new Dictionary<byte, IPDataPacket>();
+        byte[] messagesAcked = new byte[byte.MaxValue];
+        private byte MESSAGE_IS_ACKED = byte.MaxValue;
+        private int currentSecond;
 
         public ReliableSlowStream(ILogger logger)
         {
@@ -35,6 +40,15 @@ namespace Connections.Streams
 
         public Queue<IPDataPacket> GetMessageToSend()
         {
+            if (DateTime.Now.Second > currentSecond)
+            {
+                foreach (KeyValuePair<byte, IPDataPacket> keyValuePair in messagesNotAcked)
+                {
+                    messagesToSend.Enqueue(keyValuePair.Value);
+                }
+                currentSecond = DateTime.Now.Second % 60;
+            }
+
             return messagesToSend;
         }
 
@@ -45,10 +59,18 @@ namespace Connections.Streams
             switch (message[1])
             {
                 case (byte) PacketTypes.SPAWNED_PLAYER:
-                    EnqueueGottenMessage( new byte[]{message[2], message[3]}, packetId, data.ip);
+                    if (messagesAcked[packetId] != MESSAGE_IS_ACKED)
+                    {
+                        messagesAcked[packetId] = MESSAGE_IS_ACKED;
+                        EnqueueGottenMessage( new []{message[2], message[3]}, packetId, data.ip);
+                    }
                     break;
                 case (byte)PacketTypes.INIT_CONNECTION:
-                    EnqueueGottenMessage( new byte[]{message[2]}, packetId, data.ip);
+                    if (messagesAcked[packetId] != MESSAGE_IS_ACKED)
+                    {
+                        messagesAcked[packetId] = MESSAGE_IS_ACKED;
+                        EnqueueGottenMessage(new [] {message[2]}, packetId, data.ip);
+                    }
                     break;
                 case (byte)PacketTypes.ACK:
                     messagesNotAcked.Remove(packetId);

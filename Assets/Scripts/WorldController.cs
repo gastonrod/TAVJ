@@ -46,10 +46,10 @@ namespace DefaultNamespace
         }
 
         
-        public byte[] GetPositions(byte snapshotID, int packetSize)
+        public byte[] GetPositions(byte snapshotId, int packetSize)
         {
             byte[] positions = new byte[_gameObjectsCount * packetSize + 1];
-            positions[0] = snapshotID;
+            positions[0] = snapshotId;
             for (int i = 0, j = 1; i < _gameObjects.Length; i++)
             {
                 if (!_gameObjects[i])
@@ -68,12 +68,12 @@ namespace DefaultNamespace
         
         public void SetPositions(byte[] snapshot)
         {
-            for (int j = 1; j < snapshot.Length; j++)
+            for (int j = 1; j < snapshot.Length;)
             {
                 int i = snapshot[j];
                 if (!_gameObjects[i])
                 {
-                    byte id = snapshot[j];
+                    byte id = (byte)i;
                     PrimitiveType primitiveType = (PrimitiveType)snapshot[j+1];
                     Vector3 pos = Utils.ByteArrayToVector3(snapshot, j+2);
                     SpawnObject(id, primitiveType, pos);
@@ -82,7 +82,8 @@ namespace DefaultNamespace
                 else
                 {
                     j+=2;
-                    _gameObjects[i].transform.position = Utils.ByteArrayToVector3(snapshot, j) + _offset;
+//                    _gameObjects[i].transform.position = Utils.ByteArrayToVector3(snapshot, j) + _offset;
+                    _gameObjects[i].transform.position = Utils.ByteArrayToVector3(snapshot, j);
                     j += 12;
                 }
             }
@@ -120,10 +121,10 @@ namespace DefaultNamespace
 
         public void PredictMovePlayer(byte id, Vector3 movement, int packetSize)
         {
-            _gameObjects[id].transform.position += movement * _movementSpeed;
-            _framesStorer.StoreFrame(GetPositions(_framesStorer.CurrentSnapshotID(), packetSize));
-            _gameObjects[id].transform.position -= movement * _movementSpeed;
-
+            Vector3 newPos = _gameObjects[id].transform.position + movement * _movementSpeed;
+            byte[] predictedPositions = GetPositions((byte)(_framesStorer.CurrentSnapshotId()+6), packetSize);
+            Utils.Vector3ToByteArray(newPos, predictedPositions, 3);
+            _framesStorer.StoreFrame(predictedPositions);
         }
     }
 }

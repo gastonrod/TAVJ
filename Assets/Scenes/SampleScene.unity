@@ -385,8 +385,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   sourcePort: 9696
-  messageRate: 3
-  movementSpeed: 10
+  delayInMs: 10
+  packetLossPct: 1
+  messageRate: 2
 --- !u!4 &605503976
 Transform:
   m_ObjectHideFlags: 0
@@ -434,8 +435,8 @@ MonoBehaviour:
   sourcePort: 1111
   destinationPort: 9696
   clientId: 77
-  frameRate: 5
-  messageRate: 3
+  frameRate: 4
+  messageRate: 2
 --- !u!4 &1019445291
 Transform:
   m_ObjectHideFlags: 0
