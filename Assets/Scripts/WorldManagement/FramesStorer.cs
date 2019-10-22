@@ -1,9 +1,10 @@
 ﻿using System;
 using Connections;
 using Connections.Streams;
+using DefaultNamespace;
 using UnityEngine;
 
-namespace Interpolation
+namespace WorldManagement
 {
     public class FramesStorer
     {
@@ -36,12 +37,7 @@ namespace Interpolation
             byte[] nextFrame;
             if (_mustInterpolate)
             {
-                nextFrame = Interpolate(_frames[0], _frames[1]);
-                for (int i = 0; i < _frames.Length - 1 && _frames[i] != null; i++)
-                {
-                    _frames[i] = _frames[i + 1];
-                }
-                _frames[_frames.Length - 1] = null;
+                nextFrame = HandleInterpolation();
             }
             else
             {
@@ -49,26 +45,6 @@ namespace Interpolation
             }
             _mustInterpolate = !_mustInterpolate;
             return nextFrame;
-        }
-
-        private byte[] Interpolate(byte[] frame1, byte[] frame2)
-        {
-            byte[] interpolatedFrame = new byte[frame1.Length];
-            interpolatedFrame[0] = frame2[0];
-            for (int j = 1; j < frame1.Length;)
-            {
-                interpolatedFrame[j] = frame2[j];
-                j++;
-                interpolatedFrame[j] = frame2[j];
-                j++;
-                Vector3 newFramePos = Utils.ByteArrayToVector3(frame2, j);
-                Vector3 lastFramePos = Utils.ByteArrayToVector3(frame1, j);
-                Vector3 interpolatedPos = (lastFramePos + newFramePos) / 2;
-                Utils.Vector3ToByteArray(interpolatedPos, interpolatedFrame, j);
-                j += UnreliableStream.PACKET_SIZE-2;
-            }
-
-            return interpolatedFrame;
         }
 
         public bool StoreFrame(byte[] snapshot)
@@ -102,6 +78,17 @@ namespace Interpolation
             }
             _frames[i+1] = snapshot;
             return true;
+        }
+
+        public byte CurrentSnapshotId()
+        {
+            return _frames[GetLastFrame()][0];
+        }
+
+
+        public void SetCharId(byte charId)
+        {
+            _charId = charId;
         }
 
         private int SnapshotIsPredicted(byte[] snapshot)
@@ -145,11 +132,6 @@ namespace Interpolation
             return _frames[lastIdx] == null ? lastIdx-1 : lastIdx;
         }
 
-        public byte CurrentSnapshotId()
-        {
-            return _frames[GetLastFrame()][0];
-        }
-
 
         private String FramesToString()
         {
@@ -162,10 +144,36 @@ namespace Interpolation
             }
             return s;
         }
-
-        public void SetCharId(byte charId)
+        private byte[] HandleInterpolation()
         {
-            _charId = charId;
+            byte[] nextFrame = Interpolate(_frames[0], _frames[1]);
+            for (int i = 0; i < _frames.Length - 1 && _frames[i] != null; i++)
+            {
+                _frames[i] = _frames[i + 1];
+            }
+            _frames[_frames.Length - 1] = null;
+            return nextFrame;
         }
+        
+        private byte[] Interpolate(byte[] frame1, byte[] frame2)
+        {
+            byte[] interpolatedFrame = new byte[frame1.Length];
+            interpolatedFrame[0] = frame2[0];
+            for (int j = 1; j < frame1.Length;)
+            {
+                interpolatedFrame[j] = frame2[j];
+                j++;
+                interpolatedFrame[j] = frame2[j];
+                j++;
+                Vector3 newFramePos = Utils.ByteArrayToVector3(frame2, j);
+                Vector3 lastFramePos = Utils.ByteArrayToVector3(frame1, j);
+                Vector3 interpolatedPos = (lastFramePos + newFramePos) / 2;
+                Utils.Vector3ToByteArray(interpolatedPos, interpolatedFrame, j);
+                j += UnreliableStream.PACKET_SIZE-2;
+            }
+
+            return interpolatedFrame;
+        }
+
     }
 }

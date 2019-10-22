@@ -2,9 +2,9 @@
 using System.Net;
 using Connections;
 using Connections.Loggers;
-using Connections.Streams;
 using DefaultNamespace;
 using UnityEngine;
+using WorldManagement;
 using ILogger = Connections.Loggers.ILogger;
 
 public class Server : MonoBehaviour
@@ -15,7 +15,7 @@ public class Server : MonoBehaviour
     private ILogger _logger = new ServerLogger();
     private List<IPEndPoint> connectedClients = new List<IPEndPoint>();
 
-    private WorldController _worldController;
+    private ServerWorldController _worldController;
     private byte snapshotId = 0;
     public int delayInMs = 50;
     public int packetLossPct = 5;
@@ -28,7 +28,7 @@ public class Server : MonoBehaviour
     
     void Start()
     {
-        _worldController = new WorldController();
+        _worldController = new ServerWorldController();
         _msBetweenMessages = 1000 / messageRate;
         _connectionClasses = Utils.GetConnectionClasses(sourcePort, delayInMs, packetLossPct,_logger);
     }
@@ -49,7 +49,7 @@ public class Server : MonoBehaviour
 
     private void SendPositions()
     {
-        byte[] positions = _worldController.GetPositions(snapshotId++, UnreliableStream.PACKET_SIZE);
+        byte[] positions = _worldController.GetPositions(snapshotId++);
         foreach(IPEndPoint clientIp in connectedClients)
         {
             _connectionClasses.us.SaveMessageToSend(positions, clientIp);
@@ -62,7 +62,11 @@ public class Server : MonoBehaviour
         {
             IPDataPacket ipDataPacket = queue.Dequeue();
             byte[] msg = ipDataPacket.message;
-            _worldController.MovePlayer(msg[0], Utils.DecodeInput(msg[1]));
+            _worldController.MovePlayer(msg[0], InputUtils.DecodeInput(msg[1]));
+            if (InputUtils.InputSpawnEnemy(msg[1]))
+            {
+                _worldController.SpawnEnemy();
+            }
         }
     }
 

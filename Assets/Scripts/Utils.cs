@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using DefaultNamespace;
+using Connections;
 using UnityEngine;
 using ILogger = Connections.Loggers.ILogger;
 
-namespace Connections
+namespace DefaultNamespace
 {
     public class Utils
     {
@@ -18,28 +18,6 @@ namespace Connections
             return new ConnectionClasses(sourcePort, destinationPort, logger);
         }
 
-        public static Vector3 DecodeInput(byte input)
-        {
-            Vector3 pos = new Vector3(0,0,0);
-            if ((input & ((byte)InputCodifications.LEFT)) > 0)
-            {
-                pos.x += 1;
-            }
-            if ((input & ((byte)InputCodifications.RIGHT)) > 0)
-            {
-                pos.x -= 1;
-            }
-            if ((input & ((byte)InputCodifications.UP)) > 0)
-            {
-                pos.z -= 1;
-            }
-            if ((input & ((byte)InputCodifications.DOWN)) > 0)
-            {
-                pos.z += 1;
-            }
-            return pos;
-        }
-        
         public static byte[] Vector3ToByteArray(Vector3 v3)
         {
             byte[] buffer = new byte[3 * sizeof(float)];
@@ -73,7 +51,7 @@ namespace Connections
             return "[" + string.Join(",", array) + "]";
         }
 
-        public static object QueueToString(Queue<IPDataPacket> queue)
+        public static string QueueToString(Queue<IPDataPacket> queue)
         {
             return "[" + string.Join(",", queue) + "]";
         }
@@ -107,5 +85,6 @@ namespace Connections
             }
             return true;
         }
+
     }
 }

@@ -54,7 +54,9 @@ namespace Connections.Streams
             if (message.Length == 1)
             {
                 messagesNotAcked.Remove(packetID);
-            } else {
+            }
+            else
+            {
                 if (!messagesAcked.ContainsKey(data.ip))
                 {
                     messagesAcked[data.ip] = 0;

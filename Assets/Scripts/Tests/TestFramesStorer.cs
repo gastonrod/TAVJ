@@ -1,5 +1,5 @@
-﻿using Connections;
-using Interpolation;
+﻿using DefaultNamespace;
+using WorldManagement;
 using NUnit.Framework;
 using UnityEngine;
 
