@@ -1,4 +1,5 @@
-﻿using DefaultNamespace;
+﻿using System.Collections.Generic;
+using DefaultNamespace;
 using UnityEngine;
 using Random = System.Random;
 
@@ -12,6 +13,7 @@ namespace WorldManagement
         private Random _random = new Random();
         private Material _enemiesMaterial;
         private Random rand = new Random();
+        private Dictionary<byte, EnemyController> enemies = new Dictionary<byte, EnemyController>();
 
         public ServerWorldController()
         {
@@ -39,13 +41,22 @@ namespace WorldManagement
         public void SpawnEnemy()
         {
             Vector3 pos = new Vector3(_random.Next(_xRange) - _xRange/2 , 1.1f, _random.Next(_zRange) - _zRange/2);
-            GameObject enemy = SpawnObject(_lastGameObjectId++, PrimitiveType.Cylinder, pos, Color.cyan);
-            enemy.AddComponent<EnemyController>();
+            GameObject enemy = SpawnObject(_lastGameObjectId, PrimitiveType.Cylinder, pos, Color.cyan);
+            enemies[_lastGameObjectId] = new EnemyController(this, enemy, _lastGameObjectId);
+            _lastGameObjectId++;
         }
 
         public byte[] GetPositions(byte id)
         {
             return base.GetPositions(id);
+        }
+
+        public void Update()
+        {
+            foreach (KeyValuePair<byte, EnemyController> pair in enemies)
+            {
+                pair.Value.Update();
+            }
         }
     }
 }

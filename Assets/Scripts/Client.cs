@@ -18,6 +18,7 @@ public class Client : MonoBehaviour
     public byte clientId = 77;
     // Server IP+port
     public static IPEndPoint ipEndPoint;
+    public int delayInMs = 50;
 
     private ILogger _logger = new ClientLogger();
     private Color playerColor = Color.red;
@@ -34,7 +35,7 @@ public class Client : MonoBehaviour
     {
         _worldController = new ClientWorldController(new FramesStorer());
         ipEndPoint = new IPEndPoint(IPAddress.Parse(ipAddressString), destinationPort);
-        ConnectionClasses = Utils.GetConnectionClasses(sourcePort, destinationPort, _logger);
+        ConnectionClasses = Utils.GetConnectionClasses(sourcePort, delayInMs, 0,_logger);
         ConnectionClasses.rss.InitConnection(clientId, ipEndPoint);
         _msBetweenMessages = 1000 / messageRate;
         _msBetweenFrames = 1000 / frameRate;

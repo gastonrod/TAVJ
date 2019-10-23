@@ -11,15 +11,19 @@ namespace Connections
     {
         private readonly Queue<byte[]> messages = new Queue<byte[]>();
         private readonly UdpClient udpClient;
+        private readonly int _delayInMs;
+        private readonly int _pktLossPct;
+        private readonly Random rand = new Random();
 
 
         public Connection(int port, int delayInMs = 0, int pktLossPct = 0)
         {
             udpClient = new UdpClient(port);
             var RemoteIpEndPoint = new IPEndPoint(IPAddress.Any, Int16.MaxValue);
+            _delayInMs = delayInMs;
+            _pktLossPct = pktLossPct;
             new Thread(() =>
             {
-                Random rand = new Random();
                 while (true)
                 {
                     byte[] receivedMessage = udpClient.Receive(ref RemoteIpEndPoint);
@@ -33,14 +37,6 @@ namespace Connections
                     message[4] = (byte) RemoteIpEndPoint.Port;
                     message[5] = (byte) (RemoteIpEndPoint.Port>> 8);
                     Array.Copy(receivedMessage, 0, message, 6, receivedMessage.Length);
-                    if (delayInMs != 0)
-                    {
-                        if (rand.Next(100) < pktLossPct)
-                        {
-                            continue;
-                        }
-                        Thread.Sleep(delayInMs);
-                    }
                     lock (messages)
                     {
                         messages.Enqueue(message);
@@ -51,6 +47,14 @@ namespace Connections
 
         public void SendData(byte[] data, IPEndPoint ipEndPoint)
         {
+            if (_delayInMs != 0)
+            {
+                if (rand.Next(100) < _pktLossPct)
+                {
+                    return;
+                }
+                Thread.Sleep(_delayInMs);
+            }
             udpClient.Send(data, data.Length, ipEndPoint);
         }
 

@@ -76,6 +76,7 @@ namespace WorldManagement
                 _frames[i][0] = snapshot[0];
                 return true;
             }
+
             _frames[i+1] = snapshot;
             return true;
         }

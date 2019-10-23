@@ -43,7 +43,7 @@ namespace WorldManagement
 
         protected void SpawnCharacter(byte id, Color objectColor)
         {
-            GameObject capsule = SpawnObject(id, PrimitiveType.Capsule, Vector3.zero, objectColor);
+            GameObject capsule = SpawnObject(id, PrimitiveType.Capsule, new Vector3(0, 1.1f, 0), objectColor);
             capsule.tag = "Player";
         }
 

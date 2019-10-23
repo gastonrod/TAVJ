@@ -17,33 +17,43 @@ public class Server : MonoBehaviour
 
     private ServerWorldController _worldController;
     private byte snapshotId = 0;
+    public int frameRate = 3;
     public int delayInMs = 50;
     public int packetLossPct = 5;
 
     // How many messages per second.
     public int messageRate = 10;
     private int _msBetweenMessages;
-    private int _acumTime;
+    private int _msBetweenFrames;
+    private int _messagesAcumTime;
+    private int _framesAcumTime;
 
     
     void Start()
     {
         _worldController = new ServerWorldController();
         _msBetweenMessages = 1000 / messageRate;
+        _msBetweenFrames = 1000 / frameRate;
         _connectionClasses = Utils.GetConnectionClasses(sourcePort, delayInMs, packetLossPct,_logger);
     }
     
     void Update()
     {
         int deltaTimeInMs = (int)(1000 * Time.deltaTime);
-        _acumTime += deltaTimeInMs;
-        if (_acumTime > _msBetweenMessages)
+        _messagesAcumTime += deltaTimeInMs;
+        _framesAcumTime += deltaTimeInMs;
+        if (_messagesAcumTime > _msBetweenMessages)
         {
-            _acumTime = _acumTime % _msBetweenMessages;
+            _messagesAcumTime = _messagesAcumTime % _msBetweenMessages;
             _connectionClasses.pp.Update();
             ListenNewConnections();
             ListenInputs();
             SendPositions();
+        }
+        if (_framesAcumTime > _msBetweenFrames)
+        {
+            _framesAcumTime = _framesAcumTime % _msBetweenFrames;
+            _worldController.Update();
         }
     }
 
