@@ -21,7 +21,7 @@ public class Client : MonoBehaviour
     public int delayInMs = 50;
 
     private ILogger _logger = new ClientLogger();
-    private Color playerColor = Color.red;
+    public Color playerColor = Color.red;
     private ClientWorldController _worldController;
     
     public int frameRate = 60;

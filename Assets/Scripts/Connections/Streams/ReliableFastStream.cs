@@ -50,23 +50,23 @@ namespace Connections.Streams
         public void SaveReceivedData(IPDataPacket data)
         {
             byte[] message = data.message;
-            byte packetID = message[0];
+            byte packetId = message[0];
             if (message.Length == 1)
             {
-                messagesNotAcked.Remove(packetID);
+                messagesNotAcked.Remove(packetId);
             }
             else
             {
                 if (!messagesAcked.ContainsKey(data.ip))
                 {
-                    messagesAcked[data.ip] = 0;
+                    messagesAcked[data.ip] = byte.MaxValue;
                 }
-                SendAck(packetID, data.ip);
-                if (messagesAcked[data.ip] < packetID)
+                SendAck(packetId, data.ip);
+                if (messagesAcked[data.ip] < packetId || (messagesAcked[data.ip] > 250 && packetId < 5))
                 {
                     byte[] decapsulatedMessage = {message[1], message[2]};
                     messagesToReceive.Enqueue(new IPDataPacket(data.ip, decapsulatedMessage));
-                    messagesAcked[data.ip] = packetID;
+                    messagesAcked[data.ip] = packetId;
                 }
             }
         }
@@ -76,9 +76,9 @@ namespace Connections.Streams
             return messagesToReceive;
         }
         
-        private void SendAck(byte packetID, IPEndPoint ip)
+        private void SendAck(byte packetId, IPEndPoint ip)
         {
-            byte[] ack = {packetID};
+            byte[] ack = {packetId};
             SaveMessageToSend(ack, ip);
         }
 

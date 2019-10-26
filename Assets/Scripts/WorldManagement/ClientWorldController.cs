@@ -30,7 +30,7 @@ namespace WorldManagement
         {
             Vector3 newPos = _gameObjects[id].transform.position + movement * _movementSpeed;
             byte[] predictedPositions = GetPositions((byte)(_framesStorer.CurrentSnapshotId()+3));
-            Utils.Vector3ToByteArray(newPos, predictedPositions, 3);
+            Utils.Vector3ToByteArray(newPos, predictedPositions, id*UnreliableStream.PACKET_SIZE+3);
             _framesStorer.StoreFrame(predictedPositions);
         }
 

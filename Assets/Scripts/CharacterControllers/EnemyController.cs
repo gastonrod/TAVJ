@@ -1,4 +1,5 @@
 ﻿using System;
+using UnityEditor;
 using UnityEngine;
 using WorldManagement;
 
@@ -7,7 +8,7 @@ namespace DefaultNamespace
     public class EnemyController
     {
         
-        private GameObject _player;
+        private GameObject[] _players;
         private GameObject _me;
         private ServerWorldController _swc;
         private byte _id;
@@ -15,7 +16,7 @@ namespace DefaultNamespace
         private int _maxMove = 3;
         public EnemyController(ServerWorldController swc, GameObject me, byte id)
         {
-            _player = GameObject.FindWithTag("Player");
+            _players = GameObject.FindGameObjectsWithTag("Player");
             _swc = swc;
             _me = me;
             _id = id;
@@ -23,8 +24,18 @@ namespace DefaultNamespace
 
         public void Update()
         {
-            Debug.Log(_player.transform.position + " <> " + _me.transform.position);
-            Vector3 move =  _player.transform.position - _me.transform.position;
+            GameObject closestPlayer = null;
+            float minDist = int.MaxValue;
+            for (int i = 0; i < _players.Length; i++)
+            {
+                float dist = Math.Abs((_me.transform.position - _players[i].transform.position).magnitude);
+                if (dist < minDist)
+                {
+                    closestPlayer = _players[i];
+                    minDist = dist;
+                }
+            }
+            Vector3 move =  closestPlayer.transform.position - _me.transform.position;
             int x = Math.Abs(move.x) < Math.Abs(move.z) ? 0 : Math.Sign(move.x);
             int z = Math.Abs(move.z) < Math.Abs(move.x) ? 0 : Math.Sign(move.z);
             move.x = x;
