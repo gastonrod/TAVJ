@@ -132,7 +132,6 @@ GameObject:
   - component: {fileID: 641794949}
   - component: {fileID: 641794948}
   - component: {fileID: 641794947}
-  - component: {fileID: 641794946}
   m_Layer: 0
   m_Name: PlayerCapsule
   m_TagString: Player
@@ -140,18 +139,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &641794946
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 641794945}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d122cf6d0fb895d45ba42de3e2f14163, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!136 &641794947
 CapsuleCollider:
   m_ObjectHideFlags: 0

@@ -3,7 +3,7 @@ using JetBrains.Annotations;
 using Streams;
 using UnityEngine;
 
-public class PlayerController : MonoBehaviour
+public class PlayerController
 {
     private IStream<IPEndPoint> _stream;
     

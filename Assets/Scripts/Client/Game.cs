@@ -49,7 +49,7 @@ namespace Client
             _connection = new Connection(_serverAddress, _clientPort, _serverPort);
             _packetProcessor = new PacketProcessor(_connection);
             _playerGameObject = GameObject.FindGameObjectWithTag("Player");
-            _playerController = _playerGameObject.GetComponent<PlayerController>();
+            _playerController = new PlayerController();
             _unreliableStream = new UnreliableStream<IPEndPoint>();
             _reliableFastStream = new ReliableFastStream<IPEndPoint>();
             _reliableSlowStream = new ReliableSlowStream<IPEndPoint>();
