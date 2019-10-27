@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Protocols;
 using UnityEngine;
 
@@ -7,7 +8,8 @@ namespace Server
     public class SnapshotHandler
     {
         private double _timeCounter = -1;
-        private const double _snapshotTimeThreshold = 0.1;
+        private const double _snapshotTimeThreshold = 1;
+        private int _nextSnapshotId = 0;
 
         public void Update(Dictionary<byte, ClientInfo> clientsInfo, int joinedPlayersCount)
         {
@@ -29,7 +31,7 @@ namespace Server
 
         private void SendSnapshot(Dictionary<byte, ClientInfo> clientsInfo, int joinedPlayersCount)
         {
-            GameProtocol.SnapshotMessage snapshotMessage = new GameProtocol.SnapshotMessage() {PlayersInfo = new GameProtocol.SnapshotMessage.SinglePlayerInfo[joinedPlayersCount]};
+            GameProtocol.SnapshotMessage snapshotMessage = new GameProtocol.SnapshotMessage() {id = _nextSnapshotId++, PlayersInfo = new GameProtocol.SnapshotMessage.SinglePlayerInfo[joinedPlayersCount]};
             int currentPlayerCount = 0;
             foreach (var clientInfo in clientsInfo)
             {
@@ -42,6 +44,7 @@ namespace Server
                 playerInfo.Rotation = transform.rotation;
                 snapshotMessage.PlayersInfo[currentPlayerCount++] = playerInfo;
             }
+            Array.Sort(snapshotMessage.PlayersInfo, (playerInfo1, playerInfo2) => playerInfo1.ClientId - playerInfo2.ClientId);
             
             // Broadcast serialized world
             foreach (var clientInfo in clientsInfo)

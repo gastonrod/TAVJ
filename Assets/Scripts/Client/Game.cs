@@ -4,7 +4,6 @@ using System.Net;
 using Protocols;
 using Streams;
 using UnityEngine;
-using static UnityEngine.Object;
 
 namespace Client
 {
@@ -28,18 +27,20 @@ namespace Client
         private enum State {START, JOIN_REQUESTED, JOINED}
         private State _state;
         private byte _clientId;
-
-        private GameObject _playerPrefab;
-        private Dictionary<byte, Transform> players;
         
+        private Dictionary<byte, Transform> players;
+
+        private readonly SnapshotHandler _snapshotHandler;
+        private static readonly int Color = Shader.PropertyToID("_Color");
+
         public Game(GameObject playerPrefab, String serverAddress, short serverPort, short clientPort)
         {
             _stringServerAddress = serverAddress;
             _serverPort = serverPort;
             _clientPort = clientPort;
-            _playerPrefab = playerPrefab;
             _state = State.START;
             players = new Dictionary<byte, Transform>();
+            _snapshotHandler = new SnapshotHandler(1, playerPrefab, players);
         }
         
         public void Start()
@@ -69,11 +70,9 @@ namespace Client
                 case State.START:
                     break;
                 case State.JOIN_REQUESTED:
-                    // ReSharper disable once Unity.PerformanceCriticalCodeInvocation
                     JoinRequestedUpdate();
                     break;
                 case State.JOINED:
-                    // ReSharper disable once Unity.PerformanceCriticalCodeInvocation
                     JoinedUpdate();
                     break;
                 default:
@@ -100,6 +99,7 @@ namespace Client
                 _reliableSlowStream.SendMessage(JoinProtocol.SerializeJoinAcceptMessage(new JoinAcceptMessage {ClientId = _clientId}));
                 Debug.Log($"ClientGame: sent join accept message with client ID {_clientId}");
                 players.Add(_clientId, _playerGameObject.GetComponent<Transform>());
+                _playerGameObject.GetComponent<Renderer>().material.SetColor(Color, UnityEngine.Color.red);
                 _state = State.JOINED;
                 _playerController.SetStream(_reliableFastStream);
                 break;
@@ -113,26 +113,11 @@ namespace Client
             {
                 var message = messageWithMetadata.Item1;
                 var snapshot = GameProtocol.DeserializeSnapshotMessage(message);
-                ApplySnapshot(snapshot);
+                _snapshotHandler.AddSnapshot(snapshot);
             }
+            _snapshotHandler.Update();
         }
 
-        private void ApplySnapshot(GameProtocol.SnapshotMessage snapshotMessage)
-        {
-            foreach (var currentPlayerInfo in snapshotMessage.PlayersInfo)
-            {
-                bool foundCurrentPlayer = players.TryGetValue(currentPlayerInfo.ClientId, out Transform currentPlayerTransform);
-                if (foundCurrentPlayer)
-                {
-                    currentPlayerTransform.SetPositionAndRotation(currentPlayerInfo.Position, currentPlayerInfo.Rotation);
-                }
-                else
-                {
-                    GameObject currentPlayerGameObject = Instantiate(_playerPrefab, currentPlayerInfo.Position, currentPlayerInfo.Rotation);
-                    players.Add(currentPlayerInfo.ClientId, currentPlayerGameObject.GetComponent<Transform>());
-                }
-            }
-        }
     }
 
 }

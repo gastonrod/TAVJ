@@ -12,6 +12,7 @@ namespace Protocols
             {
                 using (BinaryWriter writer = new BinaryWriter(m))
                 {
+                    writer.Write(message.id);
                     foreach (var playerInfo in message.PlayersInfo)
                     {
                         writer.Write(playerInfo.ClientId);
@@ -30,12 +31,13 @@ namespace Protocols
         public static SnapshotMessage DeserializeSnapshotMessage(byte[] message)
         {
             const int SERIALIZED_SIZE = sizeof(byte) + 2 * 3 * sizeof(float);
-            int PLAYERS_COUNT = message.Length / SERIALIZED_SIZE;
+            int PLAYERS_COUNT = (message.Length - sizeof(int)) / SERIALIZED_SIZE;
             SnapshotMessage result = new SnapshotMessage {PlayersInfo = new SnapshotMessage.SinglePlayerInfo[PLAYERS_COUNT]};
             using (MemoryStream m = new MemoryStream(message))
             {
                 using (BinaryReader reader = new BinaryReader(m))
                 {
+                    result.id = reader.ReadInt32();
                     for (int i = 0; i < PLAYERS_COUNT; i++)
                     {
                         result.PlayersInfo[i] = new SnapshotMessage.SinglePlayerInfo
@@ -52,6 +54,7 @@ namespace Protocols
 
         public class SnapshotMessage
         {
+            public int id;
             public SinglePlayerInfo[] PlayersInfo;
             
             public class SinglePlayerInfo

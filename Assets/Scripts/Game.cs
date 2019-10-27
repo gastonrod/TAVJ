@@ -19,7 +19,7 @@ public class Game : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        Application.targetFrameRate = 10;
+        Application.targetFrameRate = 60;
         
         if (EnableServer)
         {

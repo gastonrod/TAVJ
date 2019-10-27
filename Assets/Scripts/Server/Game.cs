@@ -29,6 +29,7 @@ namespace Server
         private GameObject _playerPrefab;
 
         private byte _nextClientId;
+        private static readonly int Color = Shader.PropertyToID("_Color");
 
         public Game(GameObject playerPrefab, short serverPort)
         {
@@ -92,6 +93,7 @@ namespace Server
                     info.Joined = true;
                     _joinedPlayersCount++;
                     GameObject newPlayer = Instantiate(_playerPrefab, new Vector3(0,0,0), Quaternion.identity);
+                    newPlayer.GetComponent<Renderer>().material.SetColor(Color, UnityEngine.Color.green);
                     info.PlayerTransform = newPlayer.GetComponent<Transform>();
                     Debug.Log($"ServerGame: Received join accept message from client {clientId}");
                     break;
