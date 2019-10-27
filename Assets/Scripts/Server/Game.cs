@@ -21,7 +21,8 @@ namespace Server
         private Connection _connection;
         private IStream<IPEndPoint> _joinStream;
         private PacketProcessor _packetProcessor;
-
+        private SnapshotHandler _snapshotHandler;
+        
         private Dictionary<byte, ClientInfo> _clientsInfo;
         private int _joinedPlayersCount = 0;
 
@@ -44,6 +45,7 @@ namespace Server
             _packetProcessor = new PacketProcessor(_connection);
             _joinStream = new ReliableSlowStream<IPEndPoint>();
             _packetProcessor.RegisterStream(JoinProtocol.JOIN_CLIENT_ID, _joinStream);
+            _snapshotHandler = new SnapshotHandler();
             _nextClientId = (byte) (JoinProtocol.JOIN_CLIENT_ID + 1);
         }
 
@@ -137,41 +139,11 @@ namespace Server
                     info.PlayerTransform.SetPositionAndRotation(position, Quaternion.identity);
                 }
             }
-
-            // Serialize world
-            GameProtocol.SnapshotMessage snapshotMessage = new GameProtocol.SnapshotMessage() {PlayersInfo = new GameProtocol.SnapshotMessage.SinglePlayerInfo[_joinedPlayersCount]};
-            int currentPlayerCount = 0;
-            foreach (var clientInfo in _clientsInfo)
-            {
-                byte clientId = clientInfo.Key;
-                ClientInfo info = clientInfo.Value;
-                if (!info.Joined) continue;
-                var playerInfo = new GameProtocol.SnapshotMessage.SinglePlayerInfo {ClientId = clientId};
-                var transform = info.PlayerTransform;
-                playerInfo.Position = transform.position;
-                playerInfo.Rotation = transform.rotation;
-                snapshotMessage.PlayersInfo[currentPlayerCount++] = playerInfo;
-            }
             
-            // Broadcast serialized world
-            foreach (var clientInfo in _clientsInfo)
-            {
-                byte clientId = clientInfo.Key;
-                ClientInfo info = clientInfo.Value;
-                if (!info.Joined) continue;
-                info.SnapshotStream.SendMessage(GameProtocol.SerializeSnapshotMessage(snapshotMessage));
-            }
+            // Serialize world
+            _snapshotHandler.Update(_clientsInfo, _joinedPlayersCount);
             
             _packetProcessor.Update();
-        }
-        
-        private class ClientInfo
-        {
-            public bool Joined;
-            public Transform PlayerTransform;
-            public IStream<IPEndPoint> SnapshotStream;
-            public IStream<IPEndPoint> InputStream;
-            public IStream<IPEndPoint> JoinStream;
         }
     }
 
