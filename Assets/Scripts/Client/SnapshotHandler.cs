@@ -19,9 +19,9 @@ namespace Client
         private int _highestSnapshotId = -1;
         private bool _isInterpolationRunning;
 
-        public SnapshotHandler(double snapshotIntervalInSeconds, GameObject playerPrefab, IDictionary<byte, Transform> players)
+        public SnapshotHandler(GameObject playerPrefab, IDictionary<byte, Transform> players, double tickrate)
         {
-            _snapshotIntervalInSeconds = snapshotIntervalInSeconds;
+            _snapshotIntervalInSeconds = 1 / tickrate;
             _playerPrefab = playerPrefab;
             _players = players;
             _fromSnapshot = _toSnapshot = _nextSnapshot = null;

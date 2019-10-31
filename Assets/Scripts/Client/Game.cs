@@ -4,6 +4,7 @@ using System.Net;
 using Protocols;
 using Streams;
 using UnityEngine;
+using UnityEngine.Experimental.PlayerLoop;
 
 namespace Client
 {
@@ -33,14 +34,14 @@ namespace Client
         private readonly SnapshotHandler _snapshotHandler;
         private static readonly int Color = Shader.PropertyToID("_Color");
 
-        public Game(GameObject playerPrefab, String serverAddress, short serverPort, short clientPort)
+        public Game(GameObject playerPrefab, String serverAddress, short serverPort, short clientPort, double tickrate)
         {
             _stringServerAddress = serverAddress;
             _serverPort = serverPort;
             _clientPort = clientPort;
             _state = State.START;
             players = new Dictionary<byte, Transform>();
-            _snapshotHandler = new SnapshotHandler(1, playerPrefab, players);
+            _snapshotHandler = new SnapshotHandler(playerPrefab, players, tickrate);
         }
         
         public void Start()
@@ -63,7 +64,6 @@ namespace Client
     
         public void Update()
         {
-            _playerController.Update();
             _packetProcessor.Update();
             switch (_state)
             {
@@ -116,6 +116,11 @@ namespace Client
                 _snapshotHandler.AddSnapshot(snapshot);
             }
             _snapshotHandler.Update();
+        }
+
+        public void FixedUpdate()
+        {
+            _playerController.Update();
         }
 
     }

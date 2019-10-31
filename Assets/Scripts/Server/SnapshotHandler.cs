@@ -8,9 +8,14 @@ namespace Server
     public class SnapshotHandler
     {
         private double _timeCounter = -1;
-        private const double _snapshotTimeThreshold = 1;
+        private readonly double _snapshotTimeThreshold;
         private int _nextSnapshotId = 0;
 
+        public SnapshotHandler(double tickrate)
+        {
+            _snapshotTimeThreshold = 1 / tickrate;
+        }
+        
         public void Update(Dictionary<byte, ClientInfo> clientsInfo, int joinedPlayersCount)
         {
             if (_timeCounter < 0)    // Never sent a snapshot

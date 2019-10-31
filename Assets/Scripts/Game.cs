@@ -6,6 +6,9 @@ public class Game : MonoBehaviour
     public bool EnableServer;
     public bool EnableClient;
 
+    public int Tickrate;
+    public int Framerate;
+
     public String ServerAddress;
     public short ServerPort;
     public short ClientPort;
@@ -19,17 +22,17 @@ public class Game : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        Application.targetFrameRate = 60;
+        Application.targetFrameRate = Framerate;
         
         if (EnableServer)
         {
-            _serverGame = new Server.Game(ServerPlayerPrefab, ServerPort);
+            _serverGame = new Server.Game(ServerPlayerPrefab, ServerPort, Tickrate);
             _serverGame.Start();
         }
 
         if (EnableClient)
         {
-            _clientGame = new Client.Game(ClientPlayerPrefab, ServerAddress, ServerPort, ClientPort);
+            _clientGame = new Client.Game(ClientPlayerPrefab, ServerAddress, ServerPort, ClientPort, Tickrate);
             _clientGame.Start();
         }
     }
@@ -45,6 +48,19 @@ public class Game : MonoBehaviour
         if (EnableClient)
         {
             _clientGame.Update();
+        }
+    }
+    
+    void FixedUpdate()
+    {
+        if (EnableServer)
+        {
+            _serverGame.FixedUpdate();
+        }
+
+        if (EnableClient)
+        {
+            _clientGame.FixedUpdate();
         }
     }
 }

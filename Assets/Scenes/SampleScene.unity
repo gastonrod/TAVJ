@@ -511,6 +511,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   EnableServer: 1
   EnableClient: 0
+  Tickrate: 1
+  Framerate: 60
   ServerAddress: 127.0.0.1
   ServerPort: 5555
   ClientPort: 6666
