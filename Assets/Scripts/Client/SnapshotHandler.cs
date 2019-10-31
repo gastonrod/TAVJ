@@ -104,6 +104,7 @@ namespace Client
                     else
                     {
                         GameObject currentPlayerGameObject = Instantiate(_playerPrefab, position, rotation);
+                        currentPlayerGameObject.GetComponent<CharacterController>().enabled = false;
                         _players.Add(currentPlayerClientId, currentPlayerGameObject.GetComponent<Transform>());
                     }
                     fromSnapshotIndex++;

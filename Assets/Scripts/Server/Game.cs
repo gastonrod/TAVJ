@@ -98,6 +98,7 @@ namespace Server
                     GameObject newPlayer = Instantiate(_playerPrefab, new Vector3(0,0,0), Quaternion.identity);
                     newPlayer.GetComponent<Renderer>().material.SetColor(Color, UnityEngine.Color.green);
                     info.PlayerTransform = newPlayer.GetComponent<Transform>();
+                    info.CharacterController = newPlayer.GetComponent<CharacterController>();
                     Debug.Log($"ServerGame: Received join accept message from client {clientId}");
                     break;
                 }
@@ -146,11 +147,7 @@ namespace Server
                     }
 
                     delta *= 0.1f;
-                    var position = info.PlayerTransform.position;
-                    position.Set(position.x + delta.x,
-                        position.y + delta.y,
-                        position.z + delta.z);
-                    info.PlayerTransform.SetPositionAndRotation(position, Quaternion.identity);
+                    info.CharacterController.Move(delta);
                 }
             }
         }
