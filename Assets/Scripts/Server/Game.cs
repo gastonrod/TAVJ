@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Numerics;
+using DefaultNamespace;
 using Protocols;
 using Streams;
 using UnityEngine;
@@ -123,30 +124,30 @@ namespace Server
                 foreach (var inputWithMetadata in inputsWithMetadata)
                 {
                     MovementProtocol.Direction direction = MovementProtocol.Deserialize(inputWithMetadata.Item1);
-                    Vector3 delta;
+                    Vector3 vectorDirection;
                     switch (direction)
                     {
                         case MovementProtocol.Direction.Up:
                             Debug.Log($"Received UP direction input for client {clientId}");
-                            delta = Vector3.forward;
+                            vectorDirection = Vector3.forward;
                             break;
                         case MovementProtocol.Direction.Down:
                             Debug.Log($"Received DOWN direction input for client {clientId}");
-                            delta = Vector3.back;
+                            vectorDirection = Vector3.back;
                             break;
                         case MovementProtocol.Direction.Left:
                             Debug.Log($"Received LEFT direction input for client {clientId}");
-                            delta = Vector3.left;
+                            vectorDirection = Vector3.left;
                             break;
                         case MovementProtocol.Direction.Right:
                             Debug.Log($"Received RIGHT direction input for client {clientId}");
-                            delta = Vector3.right;
+                            vectorDirection = Vector3.right;
                             break;
                         default:
                             throw new Exception("Unknown direction");
                     }
 
-                    delta *= 0.1f;
+                    Vector3 delta = PlayerMovementCalculator.CalculateDelta(vectorDirection, Time.fixedDeltaTime);
                     info.CharacterController.Move(delta);
                 }
             }
