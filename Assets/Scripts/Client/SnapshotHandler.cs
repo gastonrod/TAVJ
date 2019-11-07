@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using DefaultNamespace;
 using Protocols;
 using UnityEngine;
 using static UnityEngine.Object;
@@ -12,6 +13,7 @@ namespace Client
         private readonly double _snapshotIntervalInSeconds;
         private readonly GameObject _playerPrefab;
         private IDictionary<byte, Transform> _players;
+        private CharacterController _playerCharacterController;
 
         private SnapshotMessage _fromSnapshot;
         private SnapshotMessage _toSnapshot;
@@ -36,10 +38,11 @@ namespace Client
             _inputQueue = inputQueue;
         }
 
-        public void SetClientId(byte clientId)
+        public void SetClientInfo(byte clientId, CharacterController playerCharacterController)
         {
             _isClientIdSet = true;
             _clientId = clientId;
+            _playerCharacterController = playerCharacterController;
         }
         
         public void AddSnapshot(SnapshotMessage snapshotMessage)
@@ -102,27 +105,33 @@ namespace Client
                        _fromSnapshot.PlayersInfo[fromSnapshotIndex].ClientId) toSnapshotIndex++;
 
                 if (_fromSnapshot.PlayersInfo[fromSnapshotIndex].ClientId ==
-                    _toSnapshot.PlayersInfo[toSnapshotIndex].ClientId &&
-                    _isClientIdSet &&
-                    _fromSnapshot.PlayersInfo[fromSnapshotIndex].ClientId != _clientId)    // Found player in both snapshots and is not the client's player
+                    _toSnapshot.PlayersInfo[toSnapshotIndex].ClientId)    // Found player in both snapshots
                 {
-                    var currentPlayerClientId = _fromSnapshot.PlayersInfo[fromSnapshotIndex].ClientId;
-                    var fromPosition = _fromSnapshot.PlayersInfo[fromSnapshotIndex].Position;
-                    var toPosition = _toSnapshot.PlayersInfo[toSnapshotIndex].Position;
-                    var position = new Vector3( Interpolate(fromPosition.x, toPosition.x, _currentDeltaTime, currentSnapshotIntervalInSeconds),
-                                                Interpolate(fromPosition.y, toPosition.y, _currentDeltaTime, currentSnapshotIntervalInSeconds),
-                                                Interpolate(fromPosition.z, toPosition.z, _currentDeltaTime, currentSnapshotIntervalInSeconds));
-                    var rotation = _fromSnapshot.PlayersInfo[fromSnapshotIndex].Rotation;
-                    bool foundCurrentPlayer = _players.TryGetValue(currentPlayerClientId, out Transform currentPlayerTransform);
-                    if (foundCurrentPlayer)
+                    if (_isClientIdSet && _fromSnapshot.PlayersInfo[fromSnapshotIndex].ClientId != _clientId)
                     {
-                        currentPlayerTransform.SetPositionAndRotation(position, rotation);
-                    }
-                    else
-                    {
-                        GameObject currentPlayerGameObject = Instantiate(_playerPrefab, position, rotation);
-                        currentPlayerGameObject.GetComponent<CharacterController>().enabled = false;
-                        _players.Add(currentPlayerClientId, currentPlayerGameObject.GetComponent<Transform>());
+                        var currentPlayerClientId = _fromSnapshot.PlayersInfo[fromSnapshotIndex].ClientId;
+                        var fromPosition = _fromSnapshot.PlayersInfo[fromSnapshotIndex].Position;
+                        var toPosition = _toSnapshot.PlayersInfo[toSnapshotIndex].Position;
+                        var position = new Vector3(
+                            Interpolate(fromPosition.x, toPosition.x, _currentDeltaTime,
+                                currentSnapshotIntervalInSeconds),
+                            Interpolate(fromPosition.y, toPosition.y, _currentDeltaTime,
+                                currentSnapshotIntervalInSeconds),
+                            Interpolate(fromPosition.z, toPosition.z, _currentDeltaTime,
+                                currentSnapshotIntervalInSeconds));
+                        var rotation = _fromSnapshot.PlayersInfo[fromSnapshotIndex].Rotation;
+                        bool foundCurrentPlayer =
+                            _players.TryGetValue(currentPlayerClientId, out Transform currentPlayerTransform);
+                        if (foundCurrentPlayer)
+                        {
+                            currentPlayerTransform.SetPositionAndRotation(position, rotation);
+                        }
+                        else
+                        {
+                            GameObject currentPlayerGameObject = Instantiate(_playerPrefab, position, rotation);
+                            currentPlayerGameObject.GetComponent<CharacterController>().enabled = false;
+                            _players.Add(currentPlayerClientId, currentPlayerGameObject.GetComponent<Transform>());
+                        }
                     }
                     fromSnapshotIndex++;
                 }
@@ -149,7 +158,18 @@ namespace Client
                 {
                     throw new Exception($"Failed to find info for client with ID {_clientId} in snapshot with ID {snapshot.id}");
                 }
-                // TODO: predict position
+                while (_inputQueue.Count > 0 && _inputQueue.Peek().id < info.NextInputId) _inputQueue.Dequeue();    // Discard inputs that have already been applied
+                bool foundTransform = _players.TryGetValue(_clientId, out Transform transform);
+                if (!foundTransform) throw new Exception("Failed to get current player's transform");
+                _playerCharacterController.enabled = false;
+                transform.SetPositionAndRotation(info.Position, info.Rotation);
+                _playerCharacterController.enabled = true;
+                foreach (var message in _inputQueue)
+                {
+                    Vector3 directionVector = PlayerMovementCalculator.GetVectorDirectionFromMovementDirection(message.direction);
+                    Vector3 movementDeltaVector = PlayerMovementCalculator.CalculateDelta(directionVector, Time.fixedDeltaTime);
+                    _playerCharacterController.Move(movementDeltaVector);
+                }
             }
         }
 

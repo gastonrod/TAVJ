@@ -126,25 +126,7 @@ namespace Server
                     MovementProtocol.MovementMessage movementMessage = MovementProtocol.DeserializeMessage(inputWithMetadata.Item1);
                     int inputId = movementMessage.id;
                     MovementProtocol.Direction direction = movementMessage.direction;
-                    Vector3 vectorDirection;
-                    switch (direction)
-                    {
-                        case MovementProtocol.Direction.Up:
-                            vectorDirection = Vector3.forward;
-                            break;
-                        case MovementProtocol.Direction.Down:
-                            vectorDirection = Vector3.back;
-                            break;
-                        case MovementProtocol.Direction.Left:
-                            vectorDirection = Vector3.left;
-                            break;
-                        case MovementProtocol.Direction.Right:
-                            vectorDirection = Vector3.right;
-                            break;
-                        default:
-                            throw new Exception("Unknown direction");
-                    }
-
+                    Vector3 vectorDirection = PlayerMovementCalculator.GetVectorDirectionFromMovementDirection(direction);
                     info.NextInputId = inputId >= info.NextInputId ? inputId + 1 : info.NextInputId;
                     Vector3 delta = PlayerMovementCalculator.CalculateDelta(vectorDirection, Time.fixedDeltaTime);
                     info.CharacterController.Move(delta);

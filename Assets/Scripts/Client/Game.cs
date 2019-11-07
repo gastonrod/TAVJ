@@ -104,8 +104,8 @@ namespace Client
                 players.Add(_clientId, _playerGameObject.GetComponent<Transform>());
                 _playerGameObject.GetComponent<Renderer>().material.SetColor(Color, UnityEngine.Color.red);
                 _state = State.JOINED;
+                _snapshotHandler.SetClientInfo(_clientId, _playerGameObject.GetComponent<CharacterController>());
                 _playerController.SetStream(_reliableFastStream);
-                _snapshotHandler.SetClientId(_clientId);
                 break;
             }
         }
