@@ -95,7 +95,7 @@ namespace Server
                         JoinProtocol.DeserializeJoinAcceptMessage(joinAcceptWithMetadata.Item1);
                     info.Joined = true;
                     _joinedPlayersCount++;
-                    GameObject newPlayer = Instantiate(_playerPrefab, new Vector3(0,0,0), Quaternion.identity);
+                    GameObject newPlayer = Instantiate(_playerPrefab, new Vector3(0,1,0), Quaternion.identity);
                     newPlayer.GetComponent<Renderer>().material.SetColor(Color, UnityEngine.Color.green);
                     info.PlayerTransform = newPlayer.GetComponent<Transform>();
                     info.CharacterController = newPlayer.GetComponent<CharacterController>();
