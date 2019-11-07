@@ -7,24 +7,24 @@ namespace DefaultNamespace
         public static byte GetKeyboardInput()
         {
             byte input = 0;
-            if (Input.GetKeyDown(KeyCode.A))
+            if (Input.GetKey(KeyCode.A))
             {
                 input |= (byte)InputCodifications.FORWARD;
             } 
-            if (Input.GetKeyDown(KeyCode.D))
+            if (Input.GetKey(KeyCode.D))
             {
                 input |= (byte)InputCodifications.BACK;
             } 
-            if (Input.GetKeyDown(KeyCode.W))
+            if (Input.GetKey(KeyCode.W))
             {
                 input |= (byte)InputCodifications.RIGHT;
             } 
-            if (Input.GetKeyDown(KeyCode.S))
+            if (Input.GetKey(KeyCode.S))
             {
                 input |= (byte)InputCodifications.LEFT;
             }
 
-            if (Input.GetKeyDown(KeyCode.K))
+            if (Input.GetKey(KeyCode.K))
             {
                 input |= (byte) InputCodifications.SPAWN_ENEMY;
             }
