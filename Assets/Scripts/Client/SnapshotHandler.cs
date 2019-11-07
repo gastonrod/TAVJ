@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Protocols;
 using UnityEngine;
 using static UnityEngine.Object;
@@ -19,7 +20,12 @@ namespace Client
         private int _highestSnapshotId = -1;
         private bool _isInterpolationRunning;
 
-        public SnapshotHandler(GameObject playerPrefab, IDictionary<byte, Transform> players, double tickrate)
+        private bool _isClientIdSet = false;
+        private byte _clientId = 0;
+
+        private Queue<MovementProtocol.MovementMessage> _inputQueue;
+
+        public SnapshotHandler(GameObject playerPrefab, IDictionary<byte, Transform> players, double tickrate, Queue<MovementProtocol.MovementMessage> inputQueue)
         {
             _snapshotIntervalInSeconds = 1 / tickrate;
             _playerPrefab = playerPrefab;
@@ -27,6 +33,13 @@ namespace Client
             _fromSnapshot = _toSnapshot = _nextSnapshot = null;
             _currentDeltaTime = -1;
             _isInterpolationRunning = false;
+            _inputQueue = inputQueue;
+        }
+
+        public void SetClientId(byte clientId)
+        {
+            _isClientIdSet = true;
+            _clientId = clientId;
         }
         
         public void AddSnapshot(SnapshotMessage snapshotMessage)
@@ -71,6 +84,8 @@ namespace Client
                     _isInterpolationRunning = false;
                 }
             }
+
+            RenderPrediction();
         }
 
         private void RenderInterpolatedSnapshot()
@@ -87,7 +102,9 @@ namespace Client
                        _fromSnapshot.PlayersInfo[fromSnapshotIndex].ClientId) toSnapshotIndex++;
 
                 if (_fromSnapshot.PlayersInfo[fromSnapshotIndex].ClientId ==
-                    _toSnapshot.PlayersInfo[toSnapshotIndex].ClientId)    // Found player in both snapshots
+                    _toSnapshot.PlayersInfo[toSnapshotIndex].ClientId &&
+                    _isClientIdSet &&
+                    _fromSnapshot.PlayersInfo[fromSnapshotIndex].ClientId != _clientId)    // Found player in both snapshots and is not the client's player
                 {
                     var currentPlayerClientId = _fromSnapshot.PlayersInfo[fromSnapshotIndex].ClientId;
                     var fromPosition = _fromSnapshot.PlayersInfo[fromSnapshotIndex].Position;
@@ -122,9 +139,39 @@ namespace Client
             }
         }
 
+        private void RenderPrediction()
+        {
+            SnapshotMessage snapshot = GetLatestSnapshot();
+            if (snapshot != null)
+            {
+                SnapshotMessage.SinglePlayerInfo info = GetInfoFromSnapshotForPlayer(snapshot, _clientId);
+                if (info == null)
+                {
+                    throw new Exception($"Failed to find info for client with ID {_clientId} in snapshot with ID {snapshot.id}");
+                }
+                // TODO: predict position
+            }
+        }
+
         private float Interpolate(float x1, float x2, double t, double tMax)
         {
             return (float) (x1 + (x2 - x1) * t / tMax);
+        }
+
+        private SnapshotMessage GetLatestSnapshot()
+        {
+            if (_nextSnapshot != null) return _nextSnapshot;
+            if (_toSnapshot != null) return _toSnapshot;
+            return _fromSnapshot;
+        }
+
+        private SnapshotMessage.SinglePlayerInfo GetInfoFromSnapshotForPlayer(SnapshotMessage snapshot, byte clientId)
+        {
+            for (int i = 0; i < snapshot.PlayersInfo.Length; i++)
+            {
+                if (snapshot.PlayersInfo[i].ClientId == clientId) return snapshot.PlayersInfo[i];
+            }
+            return null;
         }
     }
 }

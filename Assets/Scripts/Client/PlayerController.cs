@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System.Collections.Generic;
+using System.Net;
 using Protocols;
 using Streams;
 using UnityEngine;
@@ -8,12 +9,17 @@ namespace Client
     public class PlayerController
     {
         private int _nextInputId;
-        
+        private Queue<MovementProtocol.MovementMessage> _inputQueue;
         private IStream<IPEndPoint> _stream;
-    
-        public void SetStream(IStream<IPEndPoint> stream)
+
+        public PlayerController(Queue<MovementProtocol.MovementMessage> inputQueue)
         {
             _nextInputId = 0;
+            _inputQueue = inputQueue;
+        }
+        
+        public void SetStream(IStream<IPEndPoint> stream)
+        {
             _stream = stream;
         }
     
@@ -46,11 +52,13 @@ namespace Client
 
             if (gotInput)
             {
-                _stream.SendMessage(MovementProtocol.SerializeMessage(new MovementProtocol.MovementMessage
+                MovementProtocol.MovementMessage message = new MovementProtocol.MovementMessage
                 {
                     id = _nextInputId++,
                     direction = direction
-                }));
+                };
+                _stream.SendMessage(MovementProtocol.SerializeMessage(message));
+                _inputQueue.Enqueue(message);
             }
         }
     }

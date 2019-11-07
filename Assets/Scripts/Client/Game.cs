@@ -34,6 +34,8 @@ namespace Client
         private readonly SnapshotHandler _snapshotHandler;
         private static readonly int Color = Shader.PropertyToID("_Color");
 
+        private Queue<MovementProtocol.MovementMessage> inputQueue;
+        
         public Game(GameObject playerPrefab, String serverAddress, short serverPort, short clientPort, double tickrate)
         {
             _stringServerAddress = serverAddress;
@@ -41,7 +43,8 @@ namespace Client
             _clientPort = clientPort;
             _state = State.START;
             players = new Dictionary<byte, Transform>();
-            _snapshotHandler = new SnapshotHandler(playerPrefab, players, tickrate);
+            inputQueue = new Queue<MovementProtocol.MovementMessage>();
+            _snapshotHandler = new SnapshotHandler(playerPrefab, players, tickrate, inputQueue);
         }
         
         public void Start()
@@ -51,7 +54,7 @@ namespace Client
             _connection = new Connection(_serverAddress, _clientPort, _serverPort);
             _packetProcessor = new PacketProcessor(_connection);
             _playerGameObject = GameObject.FindGameObjectWithTag("Player");
-            _playerController = new PlayerController();
+            _playerController = new PlayerController(inputQueue);
             _unreliableStream = new UnreliableStream<IPEndPoint>();
             _reliableFastStream = new ReliableFastStream<IPEndPoint>();
             _reliableSlowStream = new ReliableSlowStream<IPEndPoint>();
@@ -102,6 +105,7 @@ namespace Client
                 _playerGameObject.GetComponent<Renderer>().material.SetColor(Color, UnityEngine.Color.red);
                 _state = State.JOINED;
                 _playerController.SetStream(_reliableFastStream);
+                _snapshotHandler.SetClientId(_clientId);
                 break;
             }
         }
