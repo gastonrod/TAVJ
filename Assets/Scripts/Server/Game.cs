@@ -123,7 +123,8 @@ namespace Server
                 IList<(byte[], IPEndPoint)> inputsWithMetadata = info.InputStream.ReceiveMessages();
                 foreach (var inputWithMetadata in inputsWithMetadata)
                 {
-                    MovementProtocol.Direction direction = MovementProtocol.Deserialize(inputWithMetadata.Item1);
+                    MovementProtocol.MovementMessage movementMessage = MovementProtocol.DeserializeMessage(inputWithMetadata.Item1);
+                    MovementProtocol.Direction direction = movementMessage.direction;
                     Vector3 vectorDirection;
                     switch (direction)
                     {
@@ -153,5 +154,4 @@ namespace Server
             }
         }
     }
-
 }

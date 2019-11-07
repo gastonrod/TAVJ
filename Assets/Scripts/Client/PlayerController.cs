@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using Protocols;
 using Streams;
 using UnityEngine;
 
@@ -6,35 +7,51 @@ namespace Client
 {
     public class PlayerController
     {
+        private int _nextInputId;
+        
         private IStream<IPEndPoint> _stream;
     
         public void SetStream(IStream<IPEndPoint> stream)
         {
+            _nextInputId = 0;
             _stream = stream;
         }
     
         public void Update()
         {
             if (_stream == null) return;
+            MovementProtocol.Direction direction = MovementProtocol.Direction.Up;
+            bool gotInput = true;
+            
             if (Input.GetKey(KeyCode.DownArrow))
             {
-                Debug.Log("PlayerController: Sending down direction");
-                _stream.SendMessage(Protocols.MovementProtocol.Serialize(Protocols.MovementProtocol.Direction.Down));
+                direction = MovementProtocol.Direction.Down;
             }
             else if (Input.GetKey(KeyCode.UpArrow))
             {
-                Debug.Log("PlayerController: Sending up direction");
-                _stream.SendMessage(Protocols.MovementProtocol.Serialize(Protocols.MovementProtocol.Direction.Up));
+                direction = MovementProtocol.Direction.Up;
             }
             else if (Input.GetKey(KeyCode.LeftArrow))
             {
-                Debug.Log("PlayerController: Sending left direction");
-                _stream.SendMessage(Protocols.MovementProtocol.Serialize(Protocols.MovementProtocol.Direction.Left));
+                direction = MovementProtocol.Direction.Left;
             }
             else if (Input.GetKey(KeyCode.RightArrow))
             {
-                Debug.Log("PlayerController: Sending right direction");
-                _stream.SendMessage(Protocols.MovementProtocol.Serialize(Protocols.MovementProtocol.Direction.Right));
+                direction = MovementProtocol.Direction.Right;
+            }
+            else
+            {
+                gotInput = false;
+            }
+
+            if (gotInput)
+            {
+                Debug.Log($"PlayerController: Sending {direction} direction with ID {_nextInputId}");
+                _stream.SendMessage(MovementProtocol.SerializeMessage(new MovementProtocol.MovementMessage
+                {
+                    id = _nextInputId++,
+                    direction = direction
+                }));
             }
         }
     }
