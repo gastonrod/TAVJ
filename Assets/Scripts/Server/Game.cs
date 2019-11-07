@@ -124,30 +124,28 @@ namespace Server
                 foreach (var inputWithMetadata in inputsWithMetadata)
                 {
                     MovementProtocol.MovementMessage movementMessage = MovementProtocol.DeserializeMessage(inputWithMetadata.Item1);
+                    int inputId = movementMessage.id;
                     MovementProtocol.Direction direction = movementMessage.direction;
                     Vector3 vectorDirection;
                     switch (direction)
                     {
                         case MovementProtocol.Direction.Up:
-                            Debug.Log($"Received UP direction input for client {clientId}");
                             vectorDirection = Vector3.forward;
                             break;
                         case MovementProtocol.Direction.Down:
-                            Debug.Log($"Received DOWN direction input for client {clientId}");
                             vectorDirection = Vector3.back;
                             break;
                         case MovementProtocol.Direction.Left:
-                            Debug.Log($"Received LEFT direction input for client {clientId}");
                             vectorDirection = Vector3.left;
                             break;
                         case MovementProtocol.Direction.Right:
-                            Debug.Log($"Received RIGHT direction input for client {clientId}");
                             vectorDirection = Vector3.right;
                             break;
                         default:
                             throw new Exception("Unknown direction");
                     }
 
+                    info.NextInputId = inputId >= info.NextInputId ? inputId + 1 : info.NextInputId;
                     Vector3 delta = PlayerMovementCalculator.CalculateDelta(vectorDirection, Time.fixedDeltaTime);
                     info.CharacterController.Move(delta);
                 }

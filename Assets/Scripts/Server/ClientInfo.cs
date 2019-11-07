@@ -12,5 +12,6 @@ namespace Server
         public IStream<IPEndPoint> SnapshotStream;
         public IStream<IPEndPoint> InputStream;
         public IStream<IPEndPoint> JoinStream;
+        public int NextInputId = 0;
     }
 }

@@ -43,7 +43,7 @@ namespace Server
                 byte clientId = clientInfo.Key;
                 ClientInfo info = clientInfo.Value;
                 if (!info.Joined) continue;
-                var playerInfo = new GameProtocol.SnapshotMessage.SinglePlayerInfo {ClientId = clientId};
+                var playerInfo = new GameProtocol.SnapshotMessage.SinglePlayerInfo {ClientId = clientId, NextInputId = info.NextInputId};
                 var transform = info.PlayerTransform;
                 playerInfo.Position = transform.position;
                 playerInfo.Rotation = transform.rotation;

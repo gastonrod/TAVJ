@@ -22,6 +22,7 @@ namespace Protocols
                         writer.Write(playerInfo.Rotation.x);
                         writer.Write(playerInfo.Rotation.y);
                         writer.Write(playerInfo.Rotation.z);
+                        writer.Write(playerInfo.NextInputId);
                     }
                 }
                 return m.ToArray();
@@ -44,7 +45,8 @@ namespace Protocols
                         {
                             ClientId = reader.ReadByte(),
                             Position = {x = reader.ReadSingle(), y = reader.ReadSingle(), z = reader.ReadSingle()},
-                            Rotation = {x = reader.ReadSingle(), y = reader.ReadSingle(), z = reader.ReadSingle()}
+                            Rotation = {x = reader.ReadSingle(), y = reader.ReadSingle(), z = reader.ReadSingle()},
+                            NextInputId = reader.ReadInt32()
                         };
                     }
                 }
@@ -62,6 +64,7 @@ namespace Protocols
                 public byte ClientId;
                 public Vector3 Position;
                 public Quaternion Rotation;
+                public int NextInputId;
             }
         }
     }

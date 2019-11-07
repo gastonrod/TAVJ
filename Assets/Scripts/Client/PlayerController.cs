@@ -46,7 +46,6 @@ namespace Client
 
             if (gotInput)
             {
-                Debug.Log($"PlayerController: Sending {direction} direction with ID {_nextInputId}");
                 _stream.SendMessage(MovementProtocol.SerializeMessage(new MovementProtocol.MovementMessage
                 {
                     id = _nextInputId++,
