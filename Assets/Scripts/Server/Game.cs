@@ -46,6 +46,7 @@ namespace Server
         {
             Debug.Log("ServerGame: Starting server...");
             Destroy(GameObject.FindGameObjectWithTag("Player"));
+            Destroy(GameObject.FindGameObjectWithTag("CrossHair"));
             _connection = new Connection(_serverPort);
             _packetProcessor = new PacketProcessor(_connection);
             _joinStream = new ReliableSlowStream<IPEndPoint>();
@@ -126,10 +127,11 @@ namespace Server
                     MovementProtocol.MovementMessage movementMessage = MovementProtocol.DeserializeMessage(inputWithMetadata.Item1);
                     int inputId = movementMessage.id;
                     MovementProtocol.Direction direction = movementMessage.direction;
-                    Vector3 vectorDirection = PlayerMovementCalculator.GetVectorDirectionFromMovementDirection(direction);
+                    Vector3 vectorDirection = PlayerMovementCalculator.GetVectorDirectionFromMovementDirectionAndRotation(direction, info.PlayerTransform.forward, info.PlayerTransform.right);
                     info.NextInputId = inputId >= info.NextInputId ? inputId + 1 : info.NextInputId;
                     Vector3 delta = PlayerMovementCalculator.CalculateDelta(vectorDirection, Time.fixedDeltaTime);
                     info.CharacterController.Move(delta);
+                    info.PlayerTransform.rotation = new Quaternion(0f, movementMessage.horizontalRotation, 0f, movementMessage.scalarRotation);
                 }
             }
         }

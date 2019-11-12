@@ -162,11 +162,14 @@ namespace Client
                 bool foundTransform = _players.TryGetValue(_clientId, out Transform transform);
                 if (!foundTransform) throw new Exception("Failed to get current player's transform");
                 _playerCharacterController.enabled = false;
-                transform.SetPositionAndRotation(info.Position, info.Rotation);
+                transform.position = info.Position;
                 _playerCharacterController.enabled = true;
                 foreach (var message in _inputQueue)
                 {
-                    Vector3 directionVector = PlayerMovementCalculator.GetVectorDirectionFromMovementDirection(message.direction);
+                    Quaternion rotation = new Quaternion(0, message.horizontalRotation, 0, message.scalarRotation);
+                    Vector3 forward = rotation * Vector3.forward;
+                    Vector3 right = rotation * Vector3.right;
+                    Vector3 directionVector = PlayerMovementCalculator.GetVectorDirectionFromMovementDirectionAndRotation(message.direction, forward, right);
                     Vector3 movementDeltaVector = PlayerMovementCalculator.CalculateDelta(directionVector, Time.fixedDeltaTime);
                     _playerCharacterController.Move(movementDeltaVector);
                 }

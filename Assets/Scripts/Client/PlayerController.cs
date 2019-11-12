@@ -11,11 +11,13 @@ namespace Client
         private int _nextInputId;
         private Queue<MovementProtocol.MovementMessage> _inputQueue;
         private IStream<IPEndPoint> _stream;
-
-        public PlayerController(Queue<MovementProtocol.MovementMessage> inputQueue)
+        private Transform _playerTransform;
+        
+        public PlayerController(Queue<MovementProtocol.MovementMessage> inputQueue, Transform playerTransform)
         {
             _nextInputId = 0;
             _inputQueue = inputQueue;
+            _playerTransform = playerTransform;
         }
         
         public void SetStream(IStream<IPEndPoint> stream)
@@ -26,40 +28,38 @@ namespace Client
         public void Update()
         {
             if (_stream == null) return;
-            MovementProtocol.Direction direction = MovementProtocol.Direction.Up;
-            bool gotInput = true;
-            
-            if (Input.GetKey(KeyCode.DownArrow))
+            MovementProtocol.Direction direction = MovementProtocol.Direction.Nop;
+
+            if (Input.GetKey(KeyCode.S))
             {
                 direction = MovementProtocol.Direction.Down;
             }
-            else if (Input.GetKey(KeyCode.UpArrow))
+            else if (Input.GetKey(KeyCode.W))
             {
                 direction = MovementProtocol.Direction.Up;
             }
-            else if (Input.GetKey(KeyCode.LeftArrow))
+            else if (Input.GetKey(KeyCode.A))
             {
                 direction = MovementProtocol.Direction.Left;
             }
-            else if (Input.GetKey(KeyCode.RightArrow))
+            else if (Input.GetKey(KeyCode.D))
             {
                 direction = MovementProtocol.Direction.Right;
             }
-            else
+            
+            _playerTransform.Rotate(new Vector3(0 , Input.GetAxis("Mouse X") * 3,0));
+            var rotation = _playerTransform.rotation;
+            float horizontalRotation = rotation.y;
+            float scalarRotation = rotation.w;
+            MovementProtocol.MovementMessage message = new MovementProtocol.MovementMessage
             {
-                gotInput = false;
-            }
-
-            if (gotInput)
-            {
-                MovementProtocol.MovementMessage message = new MovementProtocol.MovementMessage
-                {
-                    id = _nextInputId++,
-                    direction = direction
-                };
-                _stream.SendMessage(MovementProtocol.SerializeMessage(message));
-                _inputQueue.Enqueue(message);
-            }
+                id = _nextInputId++,
+                direction = direction,
+                horizontalRotation = horizontalRotation,
+                scalarRotation = scalarRotation
+            };
+            _stream.SendMessage(MovementProtocol.SerializeMessage(message));
+            _inputQueue.Enqueue(message);
         }
     }
 }

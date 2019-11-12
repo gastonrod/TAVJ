@@ -5,7 +5,7 @@ namespace Protocols
 {
     public class MovementProtocol
     {
-        public enum Direction : byte {Up = 1, Down = 2, Left = 3, Right = 4}
+        public enum Direction : byte {Nop = 0, Up = 1, Down = 2, Left = 3, Right = 4}
 
         public static byte[] SerializeMessage(MovementMessage message)
         {
@@ -15,6 +15,8 @@ namespace Protocols
                 {
                     writer.Write(message.id);
                     writer.Write((byte) message.direction);
+                    writer.Write(message.horizontalRotation);
+                    writer.Write(message.scalarRotation);
                 }
                 return m.ToArray();
             }
@@ -29,31 +31,19 @@ namespace Protocols
                 {
                     result.id = reader.ReadInt32();
                     result.direction = (Direction)reader.ReadByte();
+                    result.horizontalRotation = reader.ReadSingle();
+                    result.scalarRotation = reader.ReadSingle();
                 }
             }
             return result;
-        }
-        
-        public static byte[] Serialize(Direction direction)
-        {
-            var result = new byte[1];
-            result[0] = (byte)direction;
-            return result;
-        }
-
-        public static Direction Deserialize(byte[] data)
-        {
-            if (data.Length != 1)
-            {
-                throw new Exception("Incorrect packet length");
-            }
-            return (Direction) data[0];
         }
 
         public class MovementMessage
         {
             public int id;
             public Direction direction;
+            public float horizontalRotation;
+            public float scalarRotation;
         }
     }
 

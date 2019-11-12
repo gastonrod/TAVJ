@@ -54,7 +54,8 @@ namespace Client
             _connection = new Connection(_serverAddress, _clientPort, _serverPort);
             _packetProcessor = new PacketProcessor(_connection);
             _playerGameObject = GameObject.FindGameObjectWithTag("Player");
-            _playerController = new PlayerController(inputQueue);
+            CameraController.Instance.SetPlayer();
+            _playerController = new PlayerController(inputQueue, _playerGameObject.GetComponent<Transform>());
             _unreliableStream = new UnreliableStream<IPEndPoint>();
             _reliableFastStream = new ReliableFastStream<IPEndPoint>();
             _reliableSlowStream = new ReliableSlowStream<IPEndPoint>();
