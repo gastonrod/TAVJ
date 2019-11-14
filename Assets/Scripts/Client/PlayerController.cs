@@ -12,6 +12,8 @@ namespace Client
         private Queue<MovementProtocol.MovementMessage> _inputQueue;
         private IStream<IPEndPoint> _stream;
         private Transform _playerTransform;
+        private bool _isCameraTransformSet = false;
+        private Transform _cameraTransform = null;
         
         public PlayerController(Queue<MovementProtocol.MovementMessage> inputQueue, Transform playerTransform)
         {
@@ -55,6 +57,23 @@ namespace Client
             byte killedPlayerId = 0;
             if (Input.GetKey(KeyCode.Space))
             {
+                if (!_isCameraTransformSet)
+                {
+                    _cameraTransform = GameObject.FindWithTag("ClientCameraPosition").GetComponent<Transform>();
+                    _isCameraTransformSet = true;
+                }
+                RaycastHit hit;
+                if (Physics.Raycast(_cameraTransform.position, _cameraTransform.TransformDirection(Vector3.forward), out hit, Mathf.Infinity))
+                {
+                    Debug.DrawRay(_cameraTransform.position, _cameraTransform.TransformDirection(Vector3.forward) * hit.distance, Color.yellow, 1f, false);
+                    Debug.Log("Did Hit");
+                }
+                else
+                {
+                    Debug.DrawRay(_cameraTransform.position, _cameraTransform.TransformDirection(Vector3.forward) * 1000, Color.white, 1f, false);
+                    Debug.Log("Did not Hit");
+                }
+                
                 killedPlayerId = 1;
             }
             

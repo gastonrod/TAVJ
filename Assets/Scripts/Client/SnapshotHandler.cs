@@ -25,6 +25,8 @@ namespace Client
         private bool _isClientIdSet = false;
         private byte _clientId = 0;
 
+        private bool _isPlayerAlive = true;
+
         private Queue<MovementProtocol.MovementMessage> _inputQueue;
 
         public SnapshotHandler(GameObject playerPrefab, IDictionary<byte, PlayerInfo> players, double tickrate, Queue<MovementProtocol.MovementMessage> inputQueue)
@@ -65,6 +67,7 @@ namespace Client
 
         public void Update()
         {
+            if (!_isPlayerAlive) return;
             _currentDeltaTime = (_isInterpolationRunning ? _currentDeltaTime + Time.deltaTime : 0);
             if (_fromSnapshot != null && _toSnapshot != null)
             {
@@ -91,6 +94,11 @@ namespace Client
             RenderPrediction();
         }
 
+        public bool IsPlayerAlive()
+        {
+            return _isPlayerAlive;
+        }
+        
         private void RenderInterpolatedSnapshot()
         {
             double currentSnapshotIntervalInSeconds =
@@ -103,7 +111,8 @@ namespace Client
                 while (toSnapshotIndex < _toSnapshot.PlayersInfo.Length &&
                        _toSnapshot.PlayersInfo[toSnapshotIndex].ClientId <
                        _fromSnapshot.PlayersInfo[fromSnapshotIndex].ClientId) toSnapshotIndex++;
-
+                if (toSnapshotIndex >= _toSnapshot.PlayersInfo.Length) return;
+                
                 if (_fromSnapshot.PlayersInfo[fromSnapshotIndex].ClientId ==
                     _toSnapshot.PlayersInfo[toSnapshotIndex].ClientId)    // Found player in both snapshots
                 {
@@ -164,7 +173,8 @@ namespace Client
                 SnapshotMessage.SinglePlayerInfo info = GetInfoFromSnapshotForPlayer(snapshot, _clientId);
                 if (info == null)
                 {
-                    throw new Exception($"Failed to find info for client with ID {_clientId} in snapshot with ID {snapshot.id}");
+                    _isPlayerAlive = false;
+                    return;
                 }
                 while (_inputQueue.Count > 0 && _inputQueue.Peek().id < info.NextInputId) _inputQueue.Dequeue();    // Discard inputs that have already been applied
                 bool foundTransform = _players.TryGetValue(_clientId, out PlayerInfo playerInfo);

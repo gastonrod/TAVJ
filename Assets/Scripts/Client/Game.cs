@@ -27,6 +27,7 @@ namespace Client
         private enum State {START, JOIN_REQUESTED, JOINED}
         private State _state;
         private byte _clientId;
+        private bool _isPlayerAlive = true;
         
         private Dictionary<byte, PlayerInfo> _players;
 
@@ -67,6 +68,7 @@ namespace Client
     
         public void Update()
         {
+            if (!_isPlayerAlive) return;
             _packetProcessor.Update();
             switch (_state)
             {
@@ -120,10 +122,16 @@ namespace Client
                 _snapshotHandler.AddSnapshot(snapshot);
             }
             _snapshotHandler.Update();
+            if (!_snapshotHandler.IsPlayerAlive())
+            {
+                _isPlayerAlive = false;
+                Debug.Log("You died");
+            }
         }
 
         public void FixedUpdate()
         {
+            if (!_isPlayerAlive) return;
             _playerController.Update();
         }
 

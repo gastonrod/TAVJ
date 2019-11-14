@@ -123,7 +123,7 @@ namespace Server
             {
                 byte clientId = clientInfo.Key;
                 ClientInfo info = clientInfo.Value;
-                if (!info.Joined) continue;
+                if (!info.Joined || !info.Alive) continue;
                 IList<(byte[], IPEndPoint)> inputsWithMetadata = info.InputStream.ReceiveMessages();
                 foreach (var inputWithMetadata in inputsWithMetadata)
                 {
