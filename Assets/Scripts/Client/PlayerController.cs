@@ -51,12 +51,20 @@ namespace Client
             var rotation = _playerTransform.rotation;
             float horizontalRotation = rotation.y;
             float scalarRotation = rotation.w;
+
+            byte killedPlayerId = 0;
+            if (Input.GetKey(KeyCode.Space))
+            {
+                killedPlayerId = 1;
+            }
+            
             MovementProtocol.MovementMessage message = new MovementProtocol.MovementMessage
             {
                 id = _nextInputId++,
                 direction = direction,
                 horizontalRotation = horizontalRotation,
-                scalarRotation = scalarRotation
+                scalarRotation = scalarRotation,
+                killedPlayerId = killedPlayerId
             };
             _stream.SendMessage(MovementProtocol.SerializeMessage(message));
             _inputQueue.Enqueue(message);

@@ -12,7 +12,7 @@ namespace Client
     {
         private readonly double _snapshotIntervalInSeconds;
         private readonly GameObject _playerPrefab;
-        private IDictionary<byte, Transform> _players;
+        private IDictionary<byte, PlayerInfo> _players;
         private CharacterController _playerCharacterController;
 
         private SnapshotMessage _fromSnapshot;
@@ -27,7 +27,7 @@ namespace Client
 
         private Queue<MovementProtocol.MovementMessage> _inputQueue;
 
-        public SnapshotHandler(GameObject playerPrefab, IDictionary<byte, Transform> players, double tickrate, Queue<MovementProtocol.MovementMessage> inputQueue)
+        public SnapshotHandler(GameObject playerPrefab, IDictionary<byte, PlayerInfo> players, double tickrate, Queue<MovementProtocol.MovementMessage> inputQueue)
         {
             _snapshotIntervalInSeconds = 1 / tickrate;
             _playerPrefab = playerPrefab;
@@ -121,16 +121,16 @@ namespace Client
                                 currentSnapshotIntervalInSeconds));
                         var rotation = Quaternion.Lerp(_fromSnapshot.PlayersInfo[fromSnapshotIndex].Rotation, _toSnapshot.PlayersInfo[fromSnapshotIndex].Rotation, (float) (_currentDeltaTime / currentSnapshotIntervalInSeconds));
                         bool foundCurrentPlayer =
-                            _players.TryGetValue(currentPlayerClientId, out Transform currentPlayerTransform);
+                            _players.TryGetValue(currentPlayerClientId, out PlayerInfo playerInfo);
                         if (foundCurrentPlayer)
                         {
-                            currentPlayerTransform.SetPositionAndRotation(position, rotation);
+                            playerInfo.PlayerTransform.SetPositionAndRotation(position, rotation);
                         }
                         else
                         {
                             GameObject currentPlayerGameObject = Instantiate(_playerPrefab, position, rotation);
                             currentPlayerGameObject.GetComponent<CharacterController>().enabled = false;
-                            _players.Add(currentPlayerClientId, currentPlayerGameObject.GetComponent<Transform>());
+                            _players.Add(currentPlayerClientId, new PlayerInfo() {PlayerGameObject = currentPlayerGameObject, PlayerTransform = currentPlayerGameObject.GetComponent<Transform>()});
                         }
                     }
                     fromSnapshotIndex++;
@@ -142,6 +142,14 @@ namespace Client
                            _toSnapshot.PlayersInfo[toSnapshotIndex].ClientId)
                     {
                         // TODO: remove player
+                        byte leftPlayerId = _fromSnapshot.PlayersInfo[fromSnapshotIndex].ClientId;
+                        bool foundPlayerThatLeft = _players.TryGetValue(leftPlayerId, out PlayerInfo leftPlayerInfo);
+                        if (foundPlayerThatLeft && leftPlayerInfo.Alive)
+                        {
+                            leftPlayerInfo.Alive = false;
+                            Destroy(leftPlayerInfo.PlayerGameObject);
+                        }
+                        Debug.Log($"Player {_fromSnapshot.PlayersInfo[fromSnapshotIndex].ClientId} left");
                         fromSnapshotIndex++;
                     }
                 }
@@ -159,10 +167,10 @@ namespace Client
                     throw new Exception($"Failed to find info for client with ID {_clientId} in snapshot with ID {snapshot.id}");
                 }
                 while (_inputQueue.Count > 0 && _inputQueue.Peek().id < info.NextInputId) _inputQueue.Dequeue();    // Discard inputs that have already been applied
-                bool foundTransform = _players.TryGetValue(_clientId, out Transform transform);
+                bool foundTransform = _players.TryGetValue(_clientId, out PlayerInfo playerInfo);
                 if (!foundTransform) throw new Exception("Failed to get current player's transform");
                 _playerCharacterController.enabled = false;
-                transform.position = info.Position;
+                playerInfo.PlayerTransform.position = info.Position;
                 _playerCharacterController.enabled = true;
                 foreach (var message in _inputQueue)
                 {

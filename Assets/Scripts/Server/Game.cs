@@ -28,6 +28,7 @@ namespace Server
         
         private Dictionary<byte, ClientInfo> _clientsInfo;
         private int _joinedPlayersCount = 0;
+        private int killedPlayersCount = 0;
 
         private GameObject _playerPrefab;
 
@@ -77,7 +78,8 @@ namespace Server
                     Joined = false,
                     SnapshotStream = unreliableStream,
                     InputStream = reliableFastStream,
-                    JoinStream = reliableSlowStream
+                    JoinStream = reliableSlowStream,
+                    Alive = true
                 };
                 _clientsInfo.Add(clientId, newClientInfo);
                 newClientInfo.JoinStream.SendMessage(JoinProtocol.SerializeJoinResponseMessage(new JoinResponseMessage() {ClientId = clientId}));
@@ -99,6 +101,7 @@ namespace Server
                     _joinedPlayersCount++;
                     GameObject newPlayer = Instantiate(_playerPrefab, new Vector3(0,1,0), Quaternion.identity);
                     newPlayer.GetComponent<Renderer>().material.SetColor(Color, UnityEngine.Color.green);
+                    info.PlayerGameObject = newPlayer;
                     info.PlayerTransform = newPlayer.GetComponent<Transform>();
                     info.CharacterController = newPlayer.GetComponent<CharacterController>();
                     Debug.Log($"ServerGame: Received join accept message from client {clientId}");
@@ -109,7 +112,7 @@ namespace Server
             if (_joinedPlayersCount == 0) return;
 
             // Serialize world
-            _snapshotHandler.Update(_clientsInfo, _joinedPlayersCount);
+            _snapshotHandler.Update(_clientsInfo, _joinedPlayersCount, killedPlayersCount);
             _packetProcessor.Update();
         }
 
@@ -132,6 +135,23 @@ namespace Server
                     Vector3 delta = PlayerMovementCalculator.CalculateDelta(vectorDirection, Time.fixedDeltaTime);
                     info.CharacterController.Move(delta);
                     info.PlayerTransform.rotation = new Quaternion(0f, movementMessage.horizontalRotation, 0f, movementMessage.scalarRotation);
+                    byte killedPlayerId = movementMessage.killedPlayerId;
+                    if (movementMessage.killedPlayerId != 0)
+                    {
+                        bool foundKilledPlayer = _clientsInfo.TryGetValue(killedPlayerId, out ClientInfo killedPlayerInfo);
+                        if (!foundKilledPlayer)
+                        {
+                            throw new Exception($"Player {clientId} killed player {killedPlayerId}, but the latter's info was not found");
+                        }
+
+                        if (killedPlayerInfo.Joined && killedPlayerInfo.Alive)
+                        {
+                            Destroy(killedPlayerInfo.PlayerGameObject);
+                            killedPlayerInfo.Alive = false;
+                            killedPlayersCount++;
+                        }
+                        Debug.Log($"Player {clientId} killed player {killedPlayerId}");
+                    }
                 }
             }
         }

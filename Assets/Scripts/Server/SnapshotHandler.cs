@@ -16,11 +16,11 @@ namespace Server
             _snapshotTimeThreshold = 1 / tickrate;
         }
         
-        public void Update(Dictionary<byte, ClientInfo> clientsInfo, int joinedPlayersCount)
+        public void Update(Dictionary<byte, ClientInfo> clientsInfo, int joinedPlayersCount, int killedPlayersCount)
         {
             if (_timeCounter < 0)    // Never sent a snapshot
             {
-                SendSnapshot(clientsInfo, joinedPlayersCount);
+                SendSnapshot(clientsInfo, joinedPlayersCount, killedPlayersCount);
                 _timeCounter = 0;
             }
             else    // Already sent first snapshot
@@ -29,20 +29,20 @@ namespace Server
                 if (_timeCounter >= _snapshotTimeThreshold)
                 {
                     _timeCounter %= _snapshotTimeThreshold;
-                    SendSnapshot(clientsInfo, joinedPlayersCount);
+                    SendSnapshot(clientsInfo, joinedPlayersCount, killedPlayersCount);
                 }
             }
         }
 
-        private void SendSnapshot(Dictionary<byte, ClientInfo> clientsInfo, int joinedPlayersCount)
+        private void SendSnapshot(Dictionary<byte, ClientInfo> clientsInfo, int joinedPlayersCount, int killedPlayersCount)
         {
-            GameProtocol.SnapshotMessage snapshotMessage = new GameProtocol.SnapshotMessage() {id = _nextSnapshotId++, PlayersInfo = new GameProtocol.SnapshotMessage.SinglePlayerInfo[joinedPlayersCount]};
+            GameProtocol.SnapshotMessage snapshotMessage = new GameProtocol.SnapshotMessage() {id = _nextSnapshotId++, PlayersInfo = new GameProtocol.SnapshotMessage.SinglePlayerInfo[joinedPlayersCount - killedPlayersCount]};
             int currentPlayerCount = 0;
             foreach (var clientInfo in clientsInfo)
             {
                 byte clientId = clientInfo.Key;
                 ClientInfo info = clientInfo.Value;
-                if (!info.Joined) continue;
+                if (!info.Joined || !info.Alive) continue;
                 var playerInfo = new GameProtocol.SnapshotMessage.SinglePlayerInfo {ClientId = clientId, NextInputId = info.NextInputId};
                 var transform = info.PlayerTransform;
                 playerInfo.Position = transform.position;

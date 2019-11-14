@@ -4,7 +4,6 @@ using System.Net;
 using Protocols;
 using Streams;
 using UnityEngine;
-using UnityEngine.Experimental.PlayerLoop;
 
 namespace Client
 {
@@ -29,7 +28,7 @@ namespace Client
         private State _state;
         private byte _clientId;
         
-        private Dictionary<byte, Transform> players;
+        private Dictionary<byte, PlayerInfo> _players;
 
         private readonly SnapshotHandler _snapshotHandler;
         private static readonly int Color = Shader.PropertyToID("_Color");
@@ -42,9 +41,9 @@ namespace Client
             _serverPort = serverPort;
             _clientPort = clientPort;
             _state = State.START;
-            players = new Dictionary<byte, Transform>();
+            _players = new Dictionary<byte, PlayerInfo>();
             inputQueue = new Queue<MovementProtocol.MovementMessage>();
-            _snapshotHandler = new SnapshotHandler(playerPrefab, players, tickrate, inputQueue);
+            _snapshotHandler = new SnapshotHandler(playerPrefab, _players, tickrate, inputQueue);
         }
         
         public void Start()
@@ -102,7 +101,7 @@ namespace Client
                 _packetProcessor.SetClientId(_clientId);
                 _reliableSlowStream.SendMessage(JoinProtocol.SerializeJoinAcceptMessage(new JoinAcceptMessage {ClientId = _clientId}));
                 Debug.Log($"ClientGame: sent join accept message with client ID {_clientId}");
-                players.Add(_clientId, _playerGameObject.GetComponent<Transform>());
+                _players.Add(_clientId, new PlayerInfo() {PlayerGameObject = _playerGameObject, PlayerTransform = _playerGameObject.GetComponent<Transform>()});
                 _playerGameObject.GetComponent<Renderer>().material.SetColor(Color, UnityEngine.Color.red);
                 _state = State.JOINED;
                 _snapshotHandler.SetClientInfo(_clientId, _playerGameObject.GetComponent<CharacterController>());

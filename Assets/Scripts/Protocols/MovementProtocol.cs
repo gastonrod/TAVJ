@@ -17,6 +17,7 @@ namespace Protocols
                     writer.Write((byte) message.direction);
                     writer.Write(message.horizontalRotation);
                     writer.Write(message.scalarRotation);
+                    writer.Write(message.killedPlayerId);
                 }
                 return m.ToArray();
             }
@@ -33,6 +34,7 @@ namespace Protocols
                     result.direction = (Direction)reader.ReadByte();
                     result.horizontalRotation = reader.ReadSingle();
                     result.scalarRotation = reader.ReadSingle();
+                    result.killedPlayerId = reader.ReadByte();
                 }
             }
             return result;
@@ -44,6 +46,7 @@ namespace Protocols
             public Direction direction;
             public float horizontalRotation;
             public float scalarRotation;
+            public byte killedPlayerId;
         }
     }
 
