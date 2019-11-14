@@ -119,7 +119,7 @@ namespace Client
                                 currentSnapshotIntervalInSeconds),
                             Interpolate(fromPosition.z, toPosition.z, _currentDeltaTime,
                                 currentSnapshotIntervalInSeconds));
-                        var rotation = _fromSnapshot.PlayersInfo[fromSnapshotIndex].Rotation;
+                        var rotation = Quaternion.Lerp(_fromSnapshot.PlayersInfo[fromSnapshotIndex].Rotation, _toSnapshot.PlayersInfo[fromSnapshotIndex].Rotation, (float) (_currentDeltaTime / currentSnapshotIntervalInSeconds));
                         bool foundCurrentPlayer =
                             _players.TryGetValue(currentPlayerClientId, out Transform currentPlayerTransform);
                         if (foundCurrentPlayer)

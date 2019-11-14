@@ -22,6 +22,7 @@ namespace Protocols
                         writer.Write(playerInfo.Rotation.x);
                         writer.Write(playerInfo.Rotation.y);
                         writer.Write(playerInfo.Rotation.z);
+                        writer.Write(playerInfo.Rotation.w);
                         writer.Write(playerInfo.NextInputId);
                     }
                 }
@@ -31,7 +32,7 @@ namespace Protocols
 
         public static SnapshotMessage DeserializeSnapshotMessage(byte[] message)
         {
-            const int SERIALIZED_SIZE = sizeof(byte) + 2 * 3 * sizeof(float);
+            const int SERIALIZED_SIZE = sizeof(byte) + 7 * sizeof(float) + sizeof(int);
             int PLAYERS_COUNT = (message.Length - sizeof(int)) / SERIALIZED_SIZE;
             SnapshotMessage result = new SnapshotMessage {PlayersInfo = new SnapshotMessage.SinglePlayerInfo[PLAYERS_COUNT]};
             using (MemoryStream m = new MemoryStream(message))
@@ -45,7 +46,7 @@ namespace Protocols
                         {
                             ClientId = reader.ReadByte(),
                             Position = {x = reader.ReadSingle(), y = reader.ReadSingle(), z = reader.ReadSingle()},
-                            Rotation = {x = reader.ReadSingle(), y = reader.ReadSingle(), z = reader.ReadSingle()},
+                            Rotation = {x = reader.ReadSingle(), y = reader.ReadSingle(), z = reader.ReadSingle(), w = reader.ReadSingle()},
                             NextInputId = reader.ReadInt32()
                         };
                     }
