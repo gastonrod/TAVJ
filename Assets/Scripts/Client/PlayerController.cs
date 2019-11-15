@@ -65,16 +65,8 @@ namespace Client
                 RaycastHit hit;
                 if (Physics.Raycast(_cameraTransform.position, _cameraTransform.TransformDirection(Vector3.forward), out hit, Mathf.Infinity))
                 {
-                    Debug.DrawRay(_cameraTransform.position, _cameraTransform.TransformDirection(Vector3.forward) * hit.distance, Color.yellow, 1f, false);
-                    Debug.Log("Did Hit");
+                    killedPlayerId = hit.transform.gameObject.GetComponent<ClientIdHolder>().GetClientId();
                 }
-                else
-                {
-                    Debug.DrawRay(_cameraTransform.position, _cameraTransform.TransformDirection(Vector3.forward) * 1000, Color.white, 1f, false);
-                    Debug.Log("Did not Hit");
-                }
-                
-                killedPlayerId = 1;
             }
             
             MovementProtocol.MovementMessage message = new MovementProtocol.MovementMessage

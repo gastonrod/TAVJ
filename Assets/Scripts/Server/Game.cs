@@ -150,7 +150,6 @@ namespace Server
                             killedPlayerInfo.Alive = false;
                             killedPlayersCount++;
                         }
-                        Debug.Log($"Player {clientId} killed player {killedPlayerId}");
                     }
                 }
             }

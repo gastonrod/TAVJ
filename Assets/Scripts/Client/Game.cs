@@ -99,6 +99,7 @@ namespace Client
                 var message = messageWithMetadata.Item1;
                 var joinResponseMessage = JoinProtocol.DeserializeJoinAcceptMessage(message);
                 _clientId = joinResponseMessage.ClientId;
+                _playerGameObject.GetComponent<ClientIdHolder>().SetClientId(_clientId);;
                 Debug.Log($"ClientGame: received join response message with client ID {_clientId}");
                 _packetProcessor.SetClientId(_clientId);
                 _reliableSlowStream.SendMessage(JoinProtocol.SerializeJoinAcceptMessage(new JoinAcceptMessage {ClientId = _clientId}));

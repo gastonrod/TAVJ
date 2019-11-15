@@ -139,6 +139,7 @@ namespace Client
                         {
                             GameObject currentPlayerGameObject = Instantiate(_playerPrefab, position, rotation);
                             currentPlayerGameObject.GetComponent<CharacterController>().enabled = false;
+                            currentPlayerGameObject.GetComponent<ClientIdHolder>().SetClientId(currentPlayerClientId);
                             _players.Add(currentPlayerClientId, new PlayerInfo() {PlayerGameObject = currentPlayerGameObject, PlayerTransform = currentPlayerGameObject.GetComponent<Transform>()});
                         }
                     }
@@ -150,7 +151,6 @@ namespace Client
                            _fromSnapshot.PlayersInfo[fromSnapshotIndex].ClientId <
                            _toSnapshot.PlayersInfo[toSnapshotIndex].ClientId)
                     {
-                        // TODO: remove player
                         byte leftPlayerId = _fromSnapshot.PlayersInfo[fromSnapshotIndex].ClientId;
                         bool foundPlayerThatLeft = _players.TryGetValue(leftPlayerId, out PlayerInfo leftPlayerInfo);
                         if (foundPlayerThatLeft && leftPlayerInfo.Alive)
@@ -158,7 +158,6 @@ namespace Client
                             leftPlayerInfo.Alive = false;
                             Destroy(leftPlayerInfo.PlayerGameObject);
                         }
-                        Debug.Log($"Player {_fromSnapshot.PlayersInfo[fromSnapshotIndex].ClientId} left");
                         fromSnapshotIndex++;
                     }
                 }
