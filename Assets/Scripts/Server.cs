@@ -31,7 +31,7 @@ public class Server : MonoBehaviour
     
     void Start()
     {
-        _worldController = new ServerWorldController();
+        _worldController = new ServerWorldController((ServerLogger)_logger);
         _msBetweenMessages = 1000 / messageRate;
         _msBetweenFrames = 1000 / frameRate;
         _connectionClasses = Utils.GetConnectionClasses(sourcePort, delayInMs, packetLossPct,_logger);
@@ -76,6 +76,11 @@ public class Server : MonoBehaviour
             if (InputUtils.InputSpawnEnemy(msg[1]))
             {
                 _worldController.SpawnEnemy();
+            }
+
+            if (InputUtils.PlayerAttacked(msg[1]))
+            {
+                _worldController.PlayerAttacked(msg[0]);
             }
         }
     }

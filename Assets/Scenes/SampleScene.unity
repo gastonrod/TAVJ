@@ -417,8 +417,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   sourcePort: 9696
-  frameRate: 1
-  delayInMs: 10
+  frameRate: 2
+  delayInMs: 0
   packetLossPct: 1
   messageRate: 30
 --- !u!4 &605503976
@@ -468,7 +468,7 @@ MonoBehaviour:
   sourcePort: 1111
   destinationPort: 9696
   clientId: 77
-  delayInMs: 10
+  delayInMs: 0
   playerColor: {r: 1, g: 0, b: 0, a: 1}
   frameRate: 30
   messageRate: 30

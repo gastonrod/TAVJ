@@ -7,6 +7,11 @@ namespace Connections.Streams
     public class UnreliableStream :IStream
     {
         private ILogger _logger;
+        /*
+         *  Packet architecture:
+         *  |     1B   |     1B     |       12B      |
+         *  | ObjectID | ObjectType | ObjectPosition | 
+         */
 
         public static readonly int PACKET_SIZE = 14;
         public UnreliableStream(ILogger logger)

@@ -25,6 +25,7 @@ namespace DefaultNamespace
         public void Update()
         {
             GameObject closestPlayer = null;
+            byte closestPlayerId = 0;
             float minDist = int.MaxValue;
             for (int i = 0; i < _players.Length; i++)
             {
@@ -32,6 +33,7 @@ namespace DefaultNamespace
                 if (dist < minDist)
                 {
                     closestPlayer = _players[i];
+                    closestPlayerId = (byte)i;
                     minDist = dist;
                 }
             }
@@ -40,7 +42,8 @@ namespace DefaultNamespace
             int z = Math.Abs(move.z) < Math.Abs(move.x) ? 0 : Math.Sign(move.z);
             move.x = x;
             move.z = z;
-            _swc.MovePlayer(_id, move);
+            _swc.MoveEnemy(_id, move, closestPlayerId);
+            _players = GameObject.FindGameObjectsWithTag("Player");
         }
 
     }

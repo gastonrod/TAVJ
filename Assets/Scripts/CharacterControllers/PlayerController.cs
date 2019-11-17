@@ -1,8 +1,11 @@
 ﻿using System.Net;
+using System.Numerics;
 using Connections.Streams;
 using DefaultNamespace;
+using UnityEditor.UI;
 using UnityEngine;
 using WorldManagement;
+using Vector3 = UnityEngine.Vector3;
 
 public class PlayerController : MonoBehaviour
 {
@@ -12,11 +15,16 @@ public class PlayerController : MonoBehaviour
     private static ClientWorldController _worldController;
     private int _acumTimeFrames = 0;
     private int _msBetweenFrames = 100;
+    private ParticleSystem bigExplosion;
 
-    
+
+    void Start()
+    {
+        bigExplosion = gameObject.GetComponentInChildren<ParticleSystem>();
+        bigExplosion.Stop();
+    }
     void Update()
     {
-
         if (_reliableFastStream == null)
         {
             _reliableFastStream = Client.ConnectionClasses.rfs;
@@ -31,14 +39,33 @@ public class PlayerController : MonoBehaviour
         _acumTimeFrames += deltaTimeInMs;
         if (_acumTimeFrames > _msBetweenFrames)
         {
+            UpdatePosition();
             _acumTimeFrames = _acumTimeFrames % _msBetweenFrames;
             byte input = InputUtils.GetKeyboardInput();
             if (input != 0)
             {
                 _reliableFastStream.SendInput(input, _playerId, _ipEndPoint);
-                _worldController.PredictMovePlayer(_playerId, InputUtils.DecodeInput(input),
-                    UnreliableStream.PACKET_SIZE);
+                if (InputUtils.PlayerMoved(input))
+                {
+                    _worldController.PredictMovePlayer(InputUtils.DecodeInput(input),
+                        UnreliableStream.PACKET_SIZE);
+                }
+                if (InputUtils.PlayerAttacked(input))
+                {
+                    bigExplosion.Emit(20);
+                    _worldController.PlayerAttacked();
+                }
             }
+        }
+    }
+
+    private void UpdatePosition()
+    {
+        if (_worldController != null)
+        {
+            Vector3 playerPosition = _worldController.GetPlayerPosition() + Vector3.down;
+            gameObject.transform.position = playerPosition;
+            
         }
     }
 

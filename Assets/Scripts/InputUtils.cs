@@ -28,7 +28,21 @@ namespace DefaultNamespace
             {
                 input |= (byte) InputCodifications.SPAWN_ENEMY;
             }
+            if (Input.GetKey(KeyCode.Space))
+            {
+                input |= (byte) InputCodifications.HIT_ENEMIES;
+            }
             return input;
+        }
+
+        public static bool PlayerMoved(byte input)
+        {
+            return (input & (
+                        (byte)InputCodifications.FORWARD |
+                        (byte)InputCodifications.BACK    |
+                        (byte)InputCodifications.RIGHT   |
+                        (byte)InputCodifications.LEFT)
+                    ) != 0;
         }
 
         public static bool InputSpawnEnemy(byte input)
@@ -58,10 +72,14 @@ namespace DefaultNamespace
             }
             return pos;
         }
-        
+
+        public static bool PlayerAttacked(byte input)
+        {
+            return (input & (byte) InputCodifications.HIT_ENEMIES) != 0;
+        }
     }
     public enum InputCodifications : byte
     {
-        RIGHT = 1, LEFT = 1 << 2, FORWARD = 1 << 3, BACK = 1 << 4, SPAWN_ENEMY = 1 << 5,
+        RIGHT = 1, LEFT = 1 << 2, FORWARD = 1 << 3, BACK = 1 << 4, SPAWN_ENEMY = 1 << 5, HIT_ENEMIES = 1 << 6,
     }
 }

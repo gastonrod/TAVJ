@@ -64,9 +64,8 @@ namespace WorldManagement
             }
             // If it's not, then store it
             i = GetLastFrame();
-            bool bufferIsFull = (i == _frames.Length - 1);
             bool frameIsDiscardable = (Math.Abs(_frames[i][0] - snapshot[0]) < 10 && _frames[i][0] > snapshot[0]);
-            if (bufferIsFull || frameIsDiscardable)
+            if (frameIsDiscardable)
             {
                 return false;
             }
@@ -75,6 +74,11 @@ namespace WorldManagement
             {
                 _frames[i][0] = snapshot[0];
                 return true;
+            }
+            bool bufferIsFull = (i == _frames.Length - 1);
+            if (bufferIsFull)
+            {
+                _frames[i - 1] = snapshot;
             }
 
             _frames[i+1] = snapshot;
@@ -158,16 +162,16 @@ namespace WorldManagement
         
         private byte[] Interpolate(byte[] frame1, byte[] frame2)
         {
-            byte[] interpolatedFrame = new byte[frame1.Length];
+            byte[] interpolatedFrame = new byte[frame2.Length];
             interpolatedFrame[0] = frame2[0];
-            for (int j = 1; j < frame1.Length;)
+            for (int j = 1; j < frame2.Length;)
             {
                 interpolatedFrame[j] = frame2[j];
                 j++;
                 interpolatedFrame[j] = frame2[j];
                 j++;
-                Vector3 newFramePos = Utils.ByteArrayToVector3(frame2, j);
-                Vector3 lastFramePos = Utils.ByteArrayToVector3(frame1, j);
+                Vector3 lastFramePos    = j > frame1.Length ? Vector3.zero : Utils.ByteArrayToVector3(frame1, j);
+                Vector3 newFramePos     = Utils.ByteArrayToVector3(frame2, j);
                 Vector3 interpolatedPos = (lastFramePos + newFramePos) / 2;
                 Utils.Vector3ToByteArray(interpolatedPos, interpolatedFrame, j);
                 j += UnreliableStream.PACKET_SIZE-2;

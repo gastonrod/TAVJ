@@ -1,6 +1,9 @@
-﻿using Connections.Streams;
+﻿using System.Collections.Generic;
+using Connections.Loggers;
+using Connections.Streams;
 using DefaultNamespace;
 using UnityEngine;
+using UnityEngine.Experimental.PlayerLoop;
 
 namespace WorldManagement
 {
@@ -8,8 +11,10 @@ namespace WorldManagement
     {
         protected bool _clientSetCharacter = false;
         protected FramesStorer _framesStorer;
+        protected HashSet<byte> deletedIds = new HashSet<byte>();
+        protected byte _playerId;
 
-        public ClientWorldController(FramesStorer framesStorer)
+        public ClientWorldController(FramesStorer framesStorer, ClientLogger logger) : base(logger)
         {
             _framesStorer = framesStorer;
         }
@@ -17,6 +22,7 @@ namespace WorldManagement
         public void SpawnPlayer(byte id, Color color)
         {
             SpawnCharacter(id, color);
+            _playerId = id;
             _clientSetCharacter = true;
             _framesStorer.SetCharId(id);
         }
@@ -26,11 +32,11 @@ namespace WorldManagement
             return _clientSetCharacter;
         }
 
-        public void PredictMovePlayer(byte id, Vector3 movement, int packetSize)
+        public void PredictMovePlayer( Vector3 movement, int packetSize)
         {
-            Vector3 newPos = _gameObjects[id].transform.position + movement * _movementSpeed;
+            Vector3 newPos = _gameObjects[_playerId].transform.position + movement * _movementSpeed;
             byte[] predictedPositions = GetPositions((byte)(_framesStorer.CurrentSnapshotId()+3));
-            Utils.Vector3ToByteArray(newPos, predictedPositions, id*UnreliableStream.PACKET_SIZE+3);
+            Utils.Vector3ToByteArray(newPos, predictedPositions, _playerId*UnreliableStream.PACKET_SIZE+3);
             _framesStorer.StoreFrame(predictedPositions);
         }
 
@@ -50,12 +56,15 @@ namespace WorldManagement
             for (int j = 1; j < snapshot.Length;)
             {
                 int i = snapshot[j];
-                if (!_gameObjects[i])
+                if (!_gameObjects[i]) 
                 {
                     byte id = (byte)i;
-                    PrimitiveType primitiveType = (PrimitiveType)snapshot[j+1];
-                    Vector3 pos = Utils.ByteArrayToVector3(snapshot, j+2);
-                    SpawnObject(id, primitiveType, pos, Color.yellow);
+                    if(!deletedIds.Contains(id))
+                    {
+                        PrimitiveType primitiveType = (PrimitiveType)snapshot[j+1];
+                        Vector3 pos = Utils.ByteArrayToVector3(snapshot, j+2);
+                        SpawnObject(id, primitiveType, pos, Color.yellow);
+                    }
                     j += UnreliableStream.PACKET_SIZE;
                 }
                 else
@@ -65,6 +74,17 @@ namespace WorldManagement
                     j += 12;
                 }
             }
+        }
+
+        public void PlayerAttacked()
+        {
+//            deletedIds.UnionWith(DeleteAllNPCs());
+            deletedIds.UnionWith(AttackNPCsNearPoint(_gameObjects[_playerId].transform.position));
+        }
+
+        public Vector3 GetPlayerPosition()
+        {
+            return _gameObjects[_playerId].transform.position;
         }
     }
 }

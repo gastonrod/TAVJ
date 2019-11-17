@@ -1,4 +1,6 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
+using Connections.Loggers;
 using DefaultNamespace;
 using UnityEngine;
 using Random = System.Random;
@@ -12,10 +14,9 @@ namespace WorldManagement
         private int _zRange;
         private Random _random = new Random();
         private Material _enemiesMaterial;
-        private Random rand = new Random();
         private Dictionary<byte, EnemyController> enemies = new Dictionary<byte, EnemyController>();
 
-        public ServerWorldController()
+        public ServerWorldController(ServerLogger logger) : base(logger)
         {
             Vector3 planeScale = GameObject.FindWithTag("Platform").transform.localScale*5;
             _xRange = (int)(planeScale.x * 2);
@@ -57,6 +58,32 @@ namespace WorldManagement
             {
                 pair.Value.Update();
             }
+        }
+
+        public void PlayerAttacked(byte playerId)
+        {
+//            DeleteAllNPCs();
+//            enemies = new Dictionary<byte, EnemyController>();
+            HashSet<byte> enemiesToDelete = AttackNPCsNearPoint(_gameObjects[playerId].transform.position);
+            foreach (byte id in enemiesToDelete)
+            {
+                enemies.Remove(id);
+            }
+        }
+
+        public void MoveEnemy(byte id, Vector3 move, byte playerId)
+        {
+            Vector3 playerPos = _gameObjects[playerId].transform.position;
+            MovePlayer(id, move);
+            if (_gameObjects[id].transform.position.Equals(playerPos))
+            {
+                AttackPlayer(playerId);
+            }
+        }
+
+        private void AttackPlayer(byte playerId)
+        {
+            DestroyGameObject(playerId);
         }
     }
 }
