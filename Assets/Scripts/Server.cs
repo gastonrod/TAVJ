@@ -20,6 +20,7 @@ public class Server : MonoBehaviour
     public int frameRate = 3;
     public int delayInMs = 50;
     public int packetLossPct = 5;
+    public int spawnRate = 2;
 
     // How many messages per second.
     public int messageRate = 10;
@@ -31,7 +32,7 @@ public class Server : MonoBehaviour
     
     void Start()
     {
-        _worldController = new ServerWorldController((ServerLogger)_logger);
+        _worldController = new ServerWorldController(spawnRate, (ServerLogger)_logger);
         _msBetweenMessages = 1000 / messageRate;
         _msBetweenFrames = 1000 / frameRate;
         _connectionClasses = Utils.GetConnectionClasses(sourcePort, delayInMs, packetLossPct,_logger);

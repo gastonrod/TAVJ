@@ -71,6 +71,15 @@ namespace WorldManagement
                 {
                     j+=2;
                     _gameObjects[i].transform.position = Utils.ByteArrayToVector3(snapshot, j);
+                    PrimitiveType objectType = (PrimitiveType)_gameObjectTypes[i];
+                    if (_gameObjects[_playerId] && objectType.Equals(PrimitiveType.Cylinder) &&
+                        _gameObjects[_playerId].transform.position.Equals(_gameObjects[i].transform.position))
+                    {
+                        _logger.Log("You lost :(");
+                        DestroyGameObject(_playerId);
+                        Application.Quit();
+                         Time.timeScale = 0; 
+                    }
                     j += 12;
                 }
             }

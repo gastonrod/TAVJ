@@ -12,15 +12,17 @@ namespace WorldManagement
         private byte _lastGameObjectId = 0;
         private int _xRange;
         private int _zRange;
+        private int _spawnRate;
         private Random _random = new Random();
         private Material _enemiesMaterial;
         private Dictionary<byte, EnemyController> enemies = new Dictionary<byte, EnemyController>();
 
-        public ServerWorldController(ServerLogger logger) : base(logger)
+        public ServerWorldController(int spawnRate, ServerLogger logger) : base(logger)
         {
             Vector3 planeScale = GameObject.FindWithTag("Platform").transform.localScale*5;
             _xRange = (int)(planeScale.x * 2);
             _zRange = (int)(planeScale.z * 2);
+            _spawnRate = spawnRate;
         }
 
         public byte SpawnCharacter()
@@ -52,12 +54,16 @@ namespace WorldManagement
             return base.GetPositions(id);
         }
 
+        private bool spawnEnemy = true;
         public void Update()
         {
             foreach (KeyValuePair<byte, EnemyController> pair in enemies)
             {
                 pair.Value.Update();
             }
+            if(spawnEnemy)
+                SpawnEnemy();
+            spawnEnemy = !spawnEnemy;
         }
 
         public void PlayerAttacked(byte playerId)

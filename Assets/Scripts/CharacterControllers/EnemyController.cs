@@ -29,6 +29,8 @@ namespace DefaultNamespace
             float minDist = int.MaxValue;
             for (int i = 0; i < _players.Length; i++)
             {
+                if (!_players[i])
+                    continue;
                 float dist = Math.Abs((_me.transform.position - _players[i].transform.position).magnitude);
                 if (dist < minDist)
                 {
@@ -37,6 +39,9 @@ namespace DefaultNamespace
                     minDist = dist;
                 }
             }
+
+            if (!closestPlayer)
+                return;
             Vector3 move =  closestPlayer.transform.position - _me.transform.position;
             int x = Math.Abs(move.x) < Math.Abs(move.z) ? 0 : Math.Sign(move.x);
             int z = Math.Abs(move.z) < Math.Abs(move.x) ? 0 : Math.Sign(move.z);

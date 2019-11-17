@@ -10,8 +10,8 @@ namespace WorldManagement
     public abstract class WorldController
     {
         protected GameObject[] _gameObjects = new GameObject[byte.MaxValue];
+        protected byte[] _gameObjectTypes = new byte[byte.MaxValue];
         private byte _gameObjectsCount = 0;
-        private byte[] _gameObjectTypes = new byte[byte.MaxValue];
         protected byte _movementSpeed = 1;
         protected ILogger _logger;
 
@@ -67,7 +67,6 @@ namespace WorldManagement
                 }
                 if (_gameObjectTypes[i] == (byte)PrimitiveType.Cylinder)
                 {
-                    _logger.Log("Deleting Cylinder: " + i);
                     DestroyGameObject(i);
                     deletedIds.Add((byte) i);
                 }
@@ -88,7 +87,6 @@ namespace WorldManagement
                 if (_gameObjectTypes[i] == (byte)PrimitiveType.Cylinder &&
                     Vector3.Distance(transformPosition, _gameObjects[i].transform.position) < 2.0)
                 {
-                    _logger.Log("Deleting Cylinder: " + i);
                     DestroyGameObject(i);
                     deletedIds.Add((byte) i);
                 }
