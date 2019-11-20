@@ -16,7 +16,7 @@ namespace Streams
         // Called by whoever takes care of receiving the messages for this stream (like PacketProcessor)
         void Give(byte[] data, T metadata);
 
-        // TODO: add meaningful comment
+        // Returns the ID of this stream
         byte GetId();
     }
 }

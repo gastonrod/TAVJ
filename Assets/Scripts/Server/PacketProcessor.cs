@@ -10,9 +10,9 @@ namespace Server
 {
     public class PacketProcessor
     {
-        private Connection _connection;
-        private Dictionary<byte, IPEndPoint> _clientEndpointDictionary;
-        private Dictionary<byte, Dictionary<byte, IStream<IPEndPoint>>> _clientStreamsDictionary;
+        private readonly Connection _connection;
+        private readonly Dictionary<byte, IPEndPoint> _clientEndpointDictionary;
+        private readonly Dictionary<byte, Dictionary<byte, IStream<IPEndPoint>>> _clientStreamsDictionary;
 
         public PacketProcessor(Connection connection)
         {
