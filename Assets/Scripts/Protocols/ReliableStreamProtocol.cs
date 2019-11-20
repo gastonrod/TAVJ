@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System.Collections.Generic;
+using System.IO;
 
 namespace Protocols
 {
@@ -99,6 +100,38 @@ namespace Protocols
             {
                 Type = type;
                 MessageId = messageId;
+            }
+        }
+        
+        public class SeenManager
+        {
+            private int _highestConsecutiveAck = 0;
+            private SortedSet<int> _nonConsecutiveAcks = new SortedSet<int>();
+            
+            /* Tells this SeenManager that a message with id messageId has arrived
+             * Returns whether the message has been seen before or not
+             */
+            public bool GiveMessage(int messageId)
+            {
+                if (messageId <= _highestConsecutiveAck || _nonConsecutiveAcks.Add(messageId))
+                {
+                    return true;
+                }
+                var enumerator = _nonConsecutiveAcks.GetEnumerator();
+                while (enumerator.MoveNext())
+                {
+                    if (enumerator.Current == _highestConsecutiveAck + 1)
+                    {
+                        _highestConsecutiveAck++;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+                enumerator.Dispose();
+                _nonConsecutiveAcks.RemoveWhere(item => item <= _highestConsecutiveAck);
+                return false;
             }
         }
     }

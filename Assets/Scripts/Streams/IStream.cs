@@ -18,5 +18,8 @@ namespace Streams
 
         // Returns the ID of this stream
         byte GetId();
+
+        // Resets the Stream
+        void Reset();
     }
 }

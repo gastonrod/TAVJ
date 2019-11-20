@@ -71,21 +71,24 @@ namespace Server
                 var streams = clientStreams.Value;
                 foreach (var streamKV in streams)
                 {
-                    var stream = streamKV.Value;
-                    IList<byte[]> messagesToSend = stream.GetPendingMessagesForSend();
-                    foreach (var messageToSend in messagesToSend)
+                    if (clientId != 0)
                     {
-                        if (endpoint == null)
+                        var stream = streamKV.Value;
+                        IList<byte[]> messagesToSend = stream.GetPendingMessagesForSend();
+                        foreach (var messageToSend in messagesToSend)
                         {
-                            bool foundEndpoint = _clientEndpointDictionary.TryGetValue(clientId, out endpoint);
-                            if (!foundEndpoint)
+                            if (endpoint == null)
                             {
-                                throw new Exception($"Did not find endpoint for client {clientId}");
+                                bool foundEndpoint = _clientEndpointDictionary.TryGetValue(clientId, out endpoint);
+                                if (!foundEndpoint)
+                                {
+                                    throw new Exception($"Did not find endpoint for client {clientId}");
+                                }
                             }
+                            var serverToClientMessage = new PacketProcessorProtocol.ServerToClientMessage()
+                                {StreamId = stream.GetId(), Payload = messageToSend};
+                            _connection.SendData(PacketProcessorProtocol.SerializeServerToClientMessage(serverToClientMessage), endpoint);
                         }
-                        var serverToClientMessage = new PacketProcessorProtocol.ServerToClientMessage()
-                            {StreamId = stream.GetId(), Payload = messageToSend};
-                        _connection.SendData(PacketProcessorProtocol.SerializeServerToClientMessage(serverToClientMessage), endpoint);
                     }
                 }
             }

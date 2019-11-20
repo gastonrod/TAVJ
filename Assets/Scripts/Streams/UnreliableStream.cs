@@ -4,7 +4,7 @@ namespace Streams
 {
     public class UnreliableStream<T> : IStream<T>
     {
-        public static readonly byte DEFAULT_ID = 0;
+        private static readonly byte DEFAULT_ID = 0;
         
         public UnreliableStream() {}
 
@@ -38,6 +38,12 @@ namespace Streams
         public byte GetId()
         {
             return DEFAULT_ID;
+        }
+
+        public void Reset()
+        {
+            _sendList = new List<byte[]>();
+            _receiveList = new List<(byte[], T)>();
         }
     }
 }

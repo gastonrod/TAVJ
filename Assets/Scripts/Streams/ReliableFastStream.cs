@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using UnityEngine;
 using static Protocols.ReliableStreamProtocol;
 
 namespace Streams
@@ -11,12 +10,13 @@ namespace Streams
         private int _nextMessageId = 1;
         private SeenManager _seenManager = new SeenManager();
         
-        private List<byte[]> _sendList = new List<byte[]>();
+        private List<byte[]> _sendDataList = new List<byte[]>();
+        private List<byte[]> _sendAckList = new List<byte[]>();
         private IList<(byte[], T)> _receiveList = new List<(byte[], T)>();
 
         public void SendMessage(byte[] data)
         {
-            _sendList.Add(SerializeMessage(new DataMessage(_nextMessageId++, data)));
+            _sendDataList.Add(SerializeMessage(new DataMessage(_nextMessageId++, data)));
         }
         
         public IList<(byte[], T)> ReceiveMessages()
@@ -28,17 +28,11 @@ namespace Streams
 
         public IList<byte[]> GetPendingMessagesForSend()
         {
-            var result = _sendList;
-            _sendList = new List<byte[]>();
-            foreach (var serializedMessageToSend in _sendList)
-            {
-                LightMessage lightMessage = DeserializeLightMessage(serializedMessageToSend);
-                if (lightMessage.Type == MessageType.DATA)
-                {
-                    _sendList.Add(serializedMessageToSend);
-                }
-            }
-            return result;
+            var allMessages = new List<byte[]>(_sendDataList.Count + _sendAckList.Count);
+            allMessages.AddRange(_sendDataList);
+            allMessages.AddRange(_sendAckList);
+            _sendAckList = new List<byte[]>();
+            return allMessages;
         }
 
         public void Give(byte[] data, T metadata)
@@ -46,7 +40,7 @@ namespace Streams
             IMessage message = DeserializeMessage(data);
             if (message.GetMessageType() == MessageType.DATA)
             {
-                _sendList.Add(SerializeMessage(new AckMessage(message.MessageId)));
+                _sendAckList.Add(SerializeMessage(new AckMessage(message.MessageId)));
                 if (_seenManager.GiveMessage(message.MessageId))
                 {
                     _receiveList.Add((((DataMessage) message).Payload, metadata));
@@ -54,7 +48,7 @@ namespace Streams
             }
             else
             {
-                _sendList.RemoveAll((serializedMessage) =>
+                _sendDataList.RemoveAll(serializedMessage =>
                 {
                     LightMessage lightMessage = DeserializeLightMessage(serializedMessage);
                     return lightMessage.Type == MessageType.DATA && lightMessage.MessageId == message.MessageId;
@@ -67,36 +61,13 @@ namespace Streams
             return DEFAULT_ID;
         }
 
-        private class SeenManager
+        public void Reset()
         {
-            private int _highestConsecutiveAck = 0;
-            private SortedSet<int> _nonConsecutiveAcks = new SortedSet<int>();
-            
-            /* Tells this SeenManager that a message with id messageId has arrived
-             * Returns whether the message has been seen before or not
-             */
-            public bool GiveMessage(int messageId)
-            {
-                if (messageId <= _highestConsecutiveAck || _nonConsecutiveAcks.Add(messageId))
-                {
-                    return true;
-                }
-                var enumerator = _nonConsecutiveAcks.GetEnumerator();
-                while (enumerator.MoveNext())
-                {
-                    if (enumerator.Current == _highestConsecutiveAck + 1)
-                    {
-                        _highestConsecutiveAck++;
-                    }
-                    else
-                    {
-                        break;
-                    }
-                }
-                enumerator.Dispose();
-                _nonConsecutiveAcks.RemoveWhere(item => item <= _highestConsecutiveAck);
-                return false;
-            }
+            _nextMessageId = 1;
+            _seenManager = new SeenManager();
+            _sendDataList = new List<byte[]>();
+            _sendAckList = new List<byte[]>();
+            _receiveList = new List<(byte[], T)>();
         }
     }
 }

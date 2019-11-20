@@ -46,7 +46,7 @@ namespace Server
             Destroy(GameObject.FindGameObjectWithTag("CrossHair"));
             _connection = new Connection(_serverPort);
             _packetProcessor = new PacketProcessor(_connection);
-            _joinStream = new ReliableSlowStream<IPEndPoint>();
+            _joinStream = new ReliableSlowStream<IPEndPoint>(false);
             _packetProcessor.RegisterStream(JoinProtocol.JOIN_CLIENT_ID, _joinStream);
             _snapshotHandler = new SnapshotHandler(_tickrate);
             _nextClientId = (byte) (JoinProtocol.JOIN_CLIENT_ID + 1);
@@ -67,7 +67,7 @@ namespace Server
                 _packetProcessor.RegisterClient(clientId, endpoint);
                 UnreliableStream<IPEndPoint> unreliableStream = new UnreliableStream<IPEndPoint>();
                 ReliableFastStream<IPEndPoint> reliableFastStream = new ReliableFastStream<IPEndPoint>();
-                ReliableSlowStream<IPEndPoint> reliableSlowStream = new ReliableSlowStream<IPEndPoint>();
+                ReliableSlowStream<IPEndPoint> reliableSlowStream = new ReliableSlowStream<IPEndPoint>(1);
                 _packetProcessor.RegisterStream(clientId, unreliableStream, reliableFastStream, reliableSlowStream);
                 var newClientInfo = new ClientInfo
                 {
@@ -81,6 +81,7 @@ namespace Server
                 newClientInfo.JoinStream.SendMessage(JoinProtocol.SerializeJoinResponseMessage(new JoinResponseMessage() {ClientId = clientId}));
                 Debug.Log($"ServerGame: Sent client response message for client ID {clientId}");
             }
+            _joinStream.Reset();
 
             // Process join accepts
             foreach (var clientInfo in _clientsInfo)
