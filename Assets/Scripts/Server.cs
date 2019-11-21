@@ -20,7 +20,7 @@ public class Server : MonoBehaviour
     public int frameRate = 3;
     public int delayInMs = 50;
     public int packetLossPct = 5;
-    public int spawnRate = 2;
+    public int spawnRate = 3;
 
     // How many messages per second.
     public int messageRate = 10;
@@ -63,15 +63,18 @@ public class Server : MonoBehaviour
         foreach(IPEndPoint clientIp in connectedClients)
         {
             SendPositions(clientIp);
-            SendDestroys(clientIp);
         }
+        SendDestroys();
     }
 
-    private void SendDestroys(IPEndPoint clientIp)
+    private void SendDestroys()
     {
         foreach(byte objectId in _worldController.ObjectsToDestroy())
         {
-            _connectionClasses.rss.SendDestroy(objectId, clientIp);
+            foreach (IPEndPoint clientIp in connectedClients)
+            {
+                _connectionClasses.rss.SendDestroy(objectId, clientIp);
+            }
         }
     }
 

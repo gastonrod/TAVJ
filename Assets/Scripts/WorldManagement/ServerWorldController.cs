@@ -18,6 +18,7 @@ namespace WorldManagement
         private Material _enemiesMaterial;
         private Dictionary<byte, EnemyController> enemies = new Dictionary<byte, EnemyController>();
         private Queue<byte> enemiesToDestroy = new Queue<byte>();
+        private int _spawnRateTick = 0;
 
         public ServerWorldController(int spawnRate, ServerLogger logger) : base(logger)
         {
@@ -56,16 +57,18 @@ namespace WorldManagement
             return base.GetPositions(id);
         }
 
-        private bool spawnEnemy = true;
         public void Update()
         {
             foreach (KeyValuePair<byte, EnemyController> pair in enemies)
             {
                 pair.Value.Update();
             }
-//            if(spawnEnemy)
-//                SpawnEnemy();
-            spawnEnemy = !spawnEnemy;
+
+            if (++_spawnRateTick == _spawnRate)
+            {
+                SpawnEnemy();
+                _spawnRateTick = 0;
+            }
         }
 
         public void PlayerAttacked(byte playerId)

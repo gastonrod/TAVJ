@@ -96,7 +96,6 @@ public class Client : MonoBehaviour
             byte[] msg = receivedData.Dequeue().message;
             byte msgType = msg[0];
             byte charId = msg[1];
-            _logger.Log(Utils.ArrayToString(msg));
             switch (msgType)
             {
                 case (byte)RSSPacketTypes.SPAWNED_PLAYER:
@@ -104,7 +103,6 @@ public class Client : MonoBehaviour
                     _worldController.SpawnPlayer(charId, playerColor);
                     break;
                 case (byte)RSSPacketTypes.DESTROY_OBJECT:
-                    _logger.Log("Destruyendo objeto.");
                     _worldController.DestroyObject(charId);
                     break;
             }

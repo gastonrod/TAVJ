@@ -79,6 +79,7 @@ namespace WorldManagement
             if (bufferIsFull)
             {
                 _frames[i - 1] = snapshot;
+                return true;
             }
 
             _frames[i+1] = snapshot;

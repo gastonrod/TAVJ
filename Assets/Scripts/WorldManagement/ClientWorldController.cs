@@ -79,8 +79,7 @@ namespace WorldManagement
 
         public void PlayerAttacked()
         {
-//            deletedIds.UnionWith(DeleteAllNPCs());
-            deletedIds.UnionWith(AttackNPCsNearPoint(_gameObjects[_playerId].transform.position));
+            deletedIds.UnionWith(AttackNPCsNearPoint(_gameObjects[_playerId].transform.position, false));
         }
 
         public Vector3 GetPlayerPosition()
@@ -91,6 +90,10 @@ namespace WorldManagement
         public void DestroyObject(byte charId)
         {
             DestroyGameObject(charId);
+            if (!deletedIds.Contains(charId))
+            {
+                deletedIds.Add(charId);
+            }
             if (_playerId == charId)
             {
                 _logger.Log("You lost :(");

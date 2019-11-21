@@ -76,7 +76,7 @@ namespace WorldManagement
             return deletedIds;
         }
         
-        protected HashSet<byte> AttackNPCsNearPoint(Vector3 transformPosition)
+        protected HashSet<byte> AttackNPCsNearPoint(Vector3 transformPosition, bool destroyObjects = true)
         {
             HashSet<byte> deletedIds = new HashSet<byte>();
             for (int i = 0; i < _gameObjects.Length; i++)
@@ -88,7 +88,8 @@ namespace WorldManagement
                 if (_gameObjectTypes[i] == (byte)PrimitiveType.Cylinder &&
                     Vector3.Distance(transformPosition, _gameObjects[i].transform.position) < 10.0)
                 {
-                    DestroyGameObject(i);
+                    if(destroyObjects)
+                        DestroyGameObject(i);
                     deletedIds.Add((byte) i);
                 }
             }
@@ -98,7 +99,6 @@ namespace WorldManagement
 
         protected void DestroyGameObject(int id)
         {
-            _logger.Log("Destruyendo objeto " + id);
             if (_gameObjects[id])
             {
                 Object.Destroy(_gameObjects[id]);
