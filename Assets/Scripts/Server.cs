@@ -49,7 +49,7 @@ public class Server : MonoBehaviour
             _connectionClasses.pp.Update();
             ListenNewConnections();
             ListenInputs();
-            SendPositions();
+            SendToClients();
         }
         if (_framesAcumTime > _msBetweenFrames)
         {
@@ -58,13 +58,27 @@ public class Server : MonoBehaviour
         }
     }
 
-    private void SendPositions()
+    private void SendToClients()
     {
-        byte[] positions = _worldController.GetPositions(snapshotId++);
         foreach(IPEndPoint clientIp in connectedClients)
         {
-            _connectionClasses.us.SaveMessageToSend(positions, clientIp);
+            SendPositions(clientIp);
+            SendDestroys(clientIp);
         }
+    }
+
+    private void SendDestroys(IPEndPoint clientIp)
+    {
+        foreach(byte objectId in _worldController.ObjectsToDestroy())
+        {
+            _connectionClasses.rss.SendDestroy(objectId, clientIp);
+        }
+    }
+
+    private void SendPositions(IPEndPoint clientIp)
+    {
+        byte[] positions = _worldController.GetPositions(snapshotId++);
+        _connectionClasses.us.SaveMessageToSend(positions, clientIp);
     }
     private void ListenInputs()
     {
@@ -96,7 +110,7 @@ public class Server : MonoBehaviour
             byte[] msg = ipDataPacket.message;
             if (msg != null && msg.Length > 0)
             {
-                _connectionClasses.rss.SpawnPlayer(_worldController.SpawnCharacter(), _worldController.GetMovementSpeed(), ipDataPacket.ip);
+                _connectionClasses.rss.SpawnPlayer(_worldController.SpawnCharacter(), ipDataPacket.ip);
             }
         }
     }

@@ -19,17 +19,18 @@ namespace WorldManagement
         {
             _logger = logger;
         }
-        
+
         protected byte[] GetPositions(byte snapshotId)
         {
             byte[] positions = new byte[_gameObjectsCount * UnreliableStream.PACKET_SIZE + 1];
             positions[0] = snapshotId;
-            for (int i = 0, j = 1; i < _gameObjects.Length; i++)
+        for (int i = 0, j = 1; i < _gameObjects.Length; i++)
             {
                 if (!_gameObjects[i])
                 {
                     continue;
                 }
+
                 positions[j++] = (byte)i;
                 positions[j++] = _gameObjectTypes[i];
                 Utils.Vector3ToByteArray(_gameObjects[i].transform.position, positions, j);
@@ -85,7 +86,7 @@ namespace WorldManagement
                     continue;
                 }
                 if (_gameObjectTypes[i] == (byte)PrimitiveType.Cylinder &&
-                    Vector3.Distance(transformPosition, _gameObjects[i].transform.position) < 2.0)
+                    Vector3.Distance(transformPosition, _gameObjects[i].transform.position) < 10.0)
                 {
                     DestroyGameObject(i);
                     deletedIds.Add((byte) i);
@@ -97,10 +98,14 @@ namespace WorldManagement
 
         protected void DestroyGameObject(int id)
         {
-            Object.Destroy(_gameObjects[id]);
-            _gameObjects[id] = null;
-            _gameObjectTypes[id] = 0;
-            _gameObjectsCount--;
+            _logger.Log("Destruyendo objeto " + id);
+            if (_gameObjects[id])
+            {
+                Object.Destroy(_gameObjects[id]);
+                _gameObjects[id] = null;
+                _gameObjectTypes[id] = 0;
+                _gameObjectsCount--;
+            }
         }
     }
 }

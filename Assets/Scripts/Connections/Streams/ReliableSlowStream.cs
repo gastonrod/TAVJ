@@ -20,13 +20,6 @@ namespace Connections.Streams
             _logger = logger;
         }
         
-        private enum PacketTypes
-        {
-            SPAWNED_PLAYER = 0,
-            ACK,
-            INIT_CONNECTION
-        };
-        
         private Queue<IPDataPacket> messagesToSend = new Queue<IPDataPacket>();
         private Queue<IPDataPacket> messagesToReceive = new Queue<IPDataPacket>();
 
@@ -61,23 +54,31 @@ namespace Connections.Streams
             }
             switch (message[1])
             {
-                case (byte) PacketTypes.SPAWNED_PLAYER:
+                case (byte) RSSPacketTypes.SPAWNED_PLAYER:
                     if (messagesAcked[data.ip][packetId] != MESSAGE_IS_ACKED)
                     {
                         messagesAcked[data.ip][packetId] = MESSAGE_IS_ACKED;
-                        EnqueueGottenMessage( new []{message[2], message[3]}, packetId, data.ip);
+                        EnqueueGottenMessage( new []{message[1], message[2]}, packetId, data.ip);
                     }
                     break;
-                case (byte)PacketTypes.INIT_CONNECTION:
+                case (byte)RSSPacketTypes.INIT_CONNECTION:
                     if (messagesAcked[data.ip][packetId] != MESSAGE_IS_ACKED)
                     {
                         messagesAcked[data.ip][packetId] = MESSAGE_IS_ACKED;
                         EnqueueGottenMessage(new [] {message[2]}, packetId, data.ip);
                     }
                     break;
-                case (byte)PacketTypes.ACK:
+                case (byte)RSSPacketTypes.DESTROY_OBJECT:
+                    if (messagesAcked[data.ip][packetId] != MESSAGE_IS_ACKED)
+                    {
+                        messagesAcked[data.ip][packetId] = MESSAGE_IS_ACKED;
+                        EnqueueGottenMessage(new [] {message[1], message[2]}, packetId, data.ip);
+                    }
+                    break;
+                case (byte)RSSPacketTypes.ACK:
                     messagesNotAcked.Remove(packetId);
                     break;
+                    
             }
         }
 
@@ -94,20 +95,26 @@ namespace Connections.Streams
 
         public void InitConnection(byte clientId, IPEndPoint ip)
         {
-            byte[] message = {_lastPacketId++, (byte) PacketTypes.INIT_CONNECTION, clientId};
+            byte[] message = {_lastPacketId++, (byte) RSSPacketTypes.INIT_CONNECTION, clientId};
             SaveMessageToSend(message, ip);
         }
 
-        public void SpawnPlayer(byte objectId, byte movementSpeed, IPEndPoint ip)
+        public void SpawnPlayer(byte objectId, IPEndPoint ip)
         {
-            byte[] message = {_lastPacketId++, (byte) PacketTypes.SPAWNED_PLAYER, objectId, movementSpeed};
+            byte[] message = {_lastPacketId++, (byte) RSSPacketTypes.SPAWNED_PLAYER, objectId};
             SaveMessageToSend(message, ip);
         }
         
         private void SendAck(byte packetId, IPEndPoint ip)
         {
-            byte[] ack =  {packetId, (byte)PacketTypes.ACK};
+            byte[] ack =  {packetId, (byte)RSSPacketTypes.ACK};
             SaveMessageToSend(ack, ip);
+        }
+
+        public void SendDestroy(byte objectId, IPEndPoint ip)
+        {
+            byte[] msg = {_lastPacketId++, (byte) RSSPacketTypes.DESTROY_OBJECT, objectId};
+            SaveMessageToSend(msg, ip);
         }
     }
 }

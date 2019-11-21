@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Connections.Loggers;
+using Connections.Streams;
 using DefaultNamespace;
 using UnityEngine;
 using Random = System.Random;
@@ -16,6 +17,7 @@ namespace WorldManagement
         private Random _random = new Random();
         private Material _enemiesMaterial;
         private Dictionary<byte, EnemyController> enemies = new Dictionary<byte, EnemyController>();
+        private Queue<byte> enemiesToDestroy = new Queue<byte>();
 
         public ServerWorldController(int spawnRate, ServerLogger logger) : base(logger)
         {
@@ -61,8 +63,8 @@ namespace WorldManagement
             {
                 pair.Value.Update();
             }
-            if(spawnEnemy)
-                SpawnEnemy();
+//            if(spawnEnemy)
+//                SpawnEnemy();
             spawnEnemy = !spawnEnemy;
         }
 
@@ -74,6 +76,7 @@ namespace WorldManagement
             foreach (byte id in enemiesToDelete)
             {
                 enemies.Remove(id);
+                enemiesToDestroy.Enqueue(id);
             }
         }
 
@@ -90,6 +93,14 @@ namespace WorldManagement
         private void AttackPlayer(byte playerId)
         {
             DestroyGameObject(playerId);
+            enemiesToDestroy.Enqueue(playerId);
+        }
+
+        public Queue<byte> ObjectsToDestroy()
+        {
+            Queue<byte> toReturn = enemiesToDestroy;
+            enemiesToDestroy = new Queue<byte>();
+            return toReturn;
         }
     }
 }

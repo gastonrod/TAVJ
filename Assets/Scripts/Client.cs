@@ -2,6 +2,7 @@
 using System.Net;
 using Connections;
 using Connections.Loggers;
+using Connections.Streams;
 using DefaultNamespace;
 using WorldManagement;
 using UnityEngine;
@@ -52,10 +53,7 @@ public class Client : MonoBehaviour
         {
             _acumTimeMessages = _acumTimeMessages % _msBetweenMessages;
             ConnectionClasses.pp.Update();
-            if (!_worldController.ClientSetPlayer())
-            {
-                ReceiveCharacterId();
-            }
+            ReceiveFromRSS();
             ReceivePositions();
         }
         // Update current frame
@@ -90,15 +88,26 @@ public class Client : MonoBehaviour
         }
     }
 
-    private void ReceiveCharacterId()
+    private void ReceiveFromRSS()
     {
         Queue<IPDataPacket> receivedData = ConnectionClasses.rss.GetReceivedData();
-        while (receivedData.Count > 0)
+        if (receivedData.Count > 0)
         {
             byte[] msg = receivedData.Dequeue().message;
-            byte charId = msg[0];
-            PlayerController.SetClientData(charId, _worldController);
-            _worldController.SpawnPlayer(charId, playerColor);
+            byte msgType = msg[0];
+            byte charId = msg[1];
+            _logger.Log(Utils.ArrayToString(msg));
+            switch (msgType)
+            {
+                case (byte)RSSPacketTypes.SPAWNED_PLAYER:
+                    PlayerController.SetClientData(charId, _worldController);
+                    _worldController.SpawnPlayer(charId, playerColor);
+                    break;
+                case (byte)RSSPacketTypes.DESTROY_OBJECT:
+                    _logger.Log("Destruyendo objeto.");
+                    _worldController.DestroyObject(charId);
+                    break;
+            }
         }
     }
 }
