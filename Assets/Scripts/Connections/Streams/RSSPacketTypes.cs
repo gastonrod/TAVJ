@@ -5,6 +5,7 @@
             SPAWNED_PLAYER = 0,
             ACK,
             INIT_CONNECTION,
-            DESTROY_OBJECT
+            DESTROY_OBJECT,
+            CREATE_OBJECT
     }
 }

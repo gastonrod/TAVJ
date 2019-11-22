@@ -53,7 +53,6 @@ public class PlayerController : MonoBehaviour
                 if (InputUtils.PlayerAttacked(input))
                 {
                     bigExplosion.Emit(20);
-                    _worldController.PlayerAttacked();
                 }
             }
         }

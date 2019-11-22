@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net;
+using UnityEngine;
 using ILogger = Connections.Loggers.ILogger;
 
 namespace Connections.Streams
@@ -69,10 +70,11 @@ namespace Connections.Streams
                     }
                     break;
                 case (byte)RSSPacketTypes.DESTROY_OBJECT:
+                case (byte)RSSPacketTypes.CREATE_OBJECT:
                     if (messagesAcked[data.ip][packetId] != MESSAGE_IS_ACKED)
                     {
                         messagesAcked[data.ip][packetId] = MESSAGE_IS_ACKED;
-                        EnqueueGottenMessage(new [] {message[1], message[2]}, packetId, data.ip);
+                        EnqueueGottenMessage(new [] {message[1], message[2], message[3]}, packetId, data.ip);
                     }
                     break;
                 case (byte)RSSPacketTypes.ACK:
@@ -111,9 +113,16 @@ namespace Connections.Streams
             SaveMessageToSend(ack, ip);
         }
 
-        public void SendDestroy(byte objectId, IPEndPoint ip)
+        public void SendDestroy(byte objectId, PrimitiveType primitiveType, IPEndPoint ip)
         {
-            byte[] msg = {_lastPacketId++, (byte) RSSPacketTypes.DESTROY_OBJECT, objectId};
+            byte[] msg = {_lastPacketId++, (byte) RSSPacketTypes.DESTROY_OBJECT, objectId, (byte)primitiveType};
+            SaveMessageToSend(msg, ip);
+        }
+
+        public void SendCreate(byte objectId, PrimitiveType primitiveType, IPEndPoint ip)
+        {
+            _logger.Log("Send create:");
+            byte[] msg = {_lastPacketId++, (byte) RSSPacketTypes.CREATE_OBJECT, objectId, (byte)primitiveType};
             SaveMessageToSend(msg, ip);
         }
     }

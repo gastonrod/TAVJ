@@ -1,9 +1,7 @@
 ﻿using System.Collections.Generic;
 using Connections.Loggers;
-using Connections.Streams;
 using DefaultNamespace;
 using UnityEngine;
-using UnityEngine.Experimental.PlayerLoop;
 
 namespace WorldManagement
 {
@@ -24,7 +22,6 @@ namespace WorldManagement
             SpawnCharacter(id, color);
             _playerId = id;
             _clientSetCharacter = true;
-            _framesStorer.SetCharId(id);
         }
 
         public bool ClientSetPlayer()
@@ -34,14 +31,15 @@ namespace WorldManagement
 
         public void PredictMovePlayer( Vector3 movement, int packetSize)
         {
-            Vector3 newPos = _gameObjects[_playerId].transform.position + movement * _movementSpeed;
-            byte[] predictedPositions = GetPositions((byte)(_framesStorer.CurrentSnapshotId()+3));
-            Utils.Vector3ToByteArray(newPos, predictedPositions, _playerId*UnreliableStream.PACKET_SIZE+3);
-            _framesStorer.StoreFrame(predictedPositions);
+//            Vector3 newPos = _gameObjects[_playerId].transform.position + movement * _movementSpeed;
+//            byte[] predictedPositions = GetPositions((byte)(_framesStorer.CurrentSnapshotId()+3));
+//            _logger.Log("playerId: " + _playerId + " length: " + predictedPositions.Length);
+//            Utils.Vector3ToByteArray(newPos, predictedPositions, _playerId*UnreliableStream.PACKET_SIZE+3);
+//            _framesStorer.StoreFrame(predictedPositions);
         }
 
         // Delegate methods
-        public byte[] GetNextFrame()
+        public Frame GetNextFrame()
         {
             return _framesStorer.GetNextFrame();
         }
@@ -51,56 +49,55 @@ namespace WorldManagement
             _framesStorer.StoreFrame(message);
         }
         
-        public void SetPositions(byte[] snapshot)
+        public void UpdatePositions()
         {
-            for (int j = 1; j < snapshot.Length;)
+            Frame frame = GetNextFrame();
+            if (frame == null)
+                return;
+            foreach (KeyValuePair<byte, Vector3> enemy in frame.GetEnemies())
             {
-                int i = snapshot[j];
-                if (!_gameObjects[i]) 
+                GameObject enemyGO = enemies[enemy.Key];
+                if (enemyGO)
                 {
-                    byte id = (byte)i;
-                    if(!deletedIds.Contains(id))
-                    {
-                        PrimitiveType primitiveType = (PrimitiveType)snapshot[j+1];
-                        Vector3 pos = Utils.ByteArrayToVector3(snapshot, j+2);
-                        SpawnObject(id, primitiveType, pos, Color.yellow);
-                    }
-                    j += UnreliableStream.PACKET_SIZE;
-                }
-                else
-                {
-                    j+=2;
-                    _gameObjects[i].transform.position = Utils.ByteArrayToVector3(snapshot, j);
-                    PrimitiveType objectType = (PrimitiveType)_gameObjectTypes[i];
-                    j += 12;
+                    enemyGO.transform.position = enemy.Value;
                 }
             }
-        }
-
-        public void PlayerAttacked()
-        {
-            deletedIds.UnionWith(AttackNPCsNearPoint(_gameObjects[_playerId].transform.position, false));
+            foreach (KeyValuePair<byte, Vector3> character in frame.GetCharacters())
+            {
+                GameObject characterGO = characters[character.Key];
+                if (characterGO)
+                {
+                    characterGO.transform.position = character.Value;
+                }
+            }
         }
 
         public Vector3 GetPlayerPosition()
         {
-            return _gameObjects[_playerId] ? _gameObjects[_playerId].transform.position : Vector3.zero;
+            // TODO: Change when I implement player as something appart from this.
+            return characters[_playerId] ? characters[_playerId].transform.position : Vector3.zero;
         }
 
-        public void DestroyObject(byte charId)
+        public void DestroyObject(byte charId, bool isChar)
         {
-            DestroyGameObject(charId);
+            DestroyGameObject(charId, isChar);
             if (!deletedIds.Contains(charId))
             {
                 deletedIds.Add(charId);
             }
-            if (_playerId == charId)
+            if (_playerId == charId && isChar)
             {
                 _logger.Log("You lost :(");
-                DestroyGameObject(_playerId);
+                DestroyGameObject(_playerId, isChar);
                 Application.Quit();
                 Time.timeScale = 0; 
             }
+        }
+
+        public void CreateObject(byte objId, PrimitiveType primitiveType)
+        {
+            _logger.Log("Creating object: " + objId + ", " + primitiveType);
+            SpawnObject(objId, primitiveType, Vector3.back, primitiveType == PrimitiveType.Capsule ? Color.red : Color.magenta);
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Net;
 using Connections;
 using Connections.Loggers;
@@ -65,15 +66,26 @@ public class Server : MonoBehaviour
             SendPositions(clientIp);
         }
         SendDestroys();
+        SendCreates();
     }
 
-    private void SendDestroys()
+    private void SendCreates()
     {
-        foreach(byte objectId in _worldController.ObjectsToDestroy())
+        foreach(Tuple<byte, PrimitiveType> idTypeTuple in _worldController.ObjectsToCreate())
         {
             foreach (IPEndPoint clientIp in connectedClients)
             {
-                _connectionClasses.rss.SendDestroy(objectId, clientIp);
+                _connectionClasses.rss.SendCreate(idTypeTuple.Item1, idTypeTuple.Item2, clientIp);
+            }
+        }
+    }
+    private void SendDestroys()
+    {
+        foreach(Tuple<byte, PrimitiveType> idTypeTuple in _worldController.ObjectsToDestroy())
+        {
+            foreach (IPEndPoint clientIp in connectedClients)
+            {
+                _connectionClasses.rss.SendDestroy(idTypeTuple.Item1, idTypeTuple.Item2, clientIp);
             }
         }
     }
@@ -90,7 +102,7 @@ public class Server : MonoBehaviour
         {
             IPDataPacket ipDataPacket = queue.Dequeue();
             byte[] msg = ipDataPacket.message;
-            _worldController.MovePlayer(msg[0], InputUtils.DecodeInput(msg[1]));
+            _worldController.MovePlayer(msg[0], InputUtils.DecodeInput(msg[1]), true);
             if (InputUtils.InputSpawnEnemy(msg[1]))
             {
                 _worldController.SpawnEnemy();
@@ -109,10 +121,11 @@ public class Server : MonoBehaviour
         while (queue.Count > 0)
         {
             IPDataPacket ipDataPacket = queue.Dequeue();
-            connectedClients.Add(ipDataPacket.ip);
             byte[] msg = ipDataPacket.message;
+            _logger.Log("New client: " + ipDataPacket.ip.ToString());
             if (msg != null && msg.Length > 0)
             {
+                connectedClients.Add(ipDataPacket.ip);
                 _connectionClasses.rss.SpawnPlayer(_worldController.SpawnCharacter(), ipDataPacket.ip);
             }
         }

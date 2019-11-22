@@ -66,13 +66,7 @@ public class Client : MonoBehaviour
 
     private void UpdatePositions()
     {
-        byte[] snapshot = _worldController.GetNextFrame();
-        if (snapshot == null)
-        {
-            return;
-        }
-
-        _worldController.SetPositions(snapshot);
+        _worldController.UpdatePositions();
     }
 
     private void ReceivePositions()
@@ -103,7 +97,10 @@ public class Client : MonoBehaviour
                     _worldController.SpawnPlayer(charId, playerColor);
                     break;
                 case (byte)RSSPacketTypes.DESTROY_OBJECT:
-                    _worldController.DestroyObject(charId);
+                    _worldController.DestroyObject(charId, msg[2] == (byte) PrimitiveType.Capsule);
+                    break;
+                case (byte)RSSPacketTypes.CREATE_OBJECT:
+                    _worldController.CreateObject(charId, (PrimitiveType)msg[2]);
                     break;
             }
         }

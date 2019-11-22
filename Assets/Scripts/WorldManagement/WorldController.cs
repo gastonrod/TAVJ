@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Runtime.InteropServices.WindowsRuntime;
 using Connections.Streams;
 using Connections.Loggers;
 using DefaultNamespace;
@@ -9,9 +10,8 @@ namespace WorldManagement
 {
     public abstract class WorldController
     {
-        protected GameObject[] _gameObjects = new GameObject[byte.MaxValue];
-        protected byte[] _gameObjectTypes = new byte[byte.MaxValue];
-        private byte _gameObjectsCount = 0;
+        protected Dictionary<byte, GameObject> characters = new Dictionary<byte, GameObject>();
+        protected Dictionary<byte, GameObject> enemies = new Dictionary<byte, GameObject>();
         protected byte _movementSpeed = 1;
         protected ILogger _logger;
 
@@ -22,32 +22,38 @@ namespace WorldManagement
 
         protected byte[] GetPositions(byte snapshotId)
         {
-            byte[] positions = new byte[_gameObjectsCount * UnreliableStream.PACKET_SIZE + 1];
-            positions[0] = snapshotId;
-        for (int i = 0, j = 1; i < _gameObjects.Length; i++)
+            int gameObjectsCount = (characters.Count + enemies.Count);
+            byte[] positions = new byte[gameObjectsCount * UnreliableStream.PACKET_SIZE + 1];
+            int j = 0;
+            positions[j++] = snapshotId;
+            foreach (KeyValuePair<byte, GameObject> enemy in enemies)
             {
-                if (!_gameObjects[i])
-                {
-                    continue;
-                }
-
-                positions[j++] = (byte)i;
-                positions[j++] = _gameObjectTypes[i];
-                Utils.Vector3ToByteArray(_gameObjects[i].transform.position, positions, j);
+                positions[j++] = enemy.Key;
+                positions[j++] = (byte) PrimitiveType.Cylinder;
+                Utils.Vector3ToByteArray(enemy.Value.transform.position, positions, j);
+                j += 12;
+            }
+            foreach (KeyValuePair<byte, GameObject> character in characters)
+            {
+                positions[j++] = character.Key;
+                positions[j++] = (byte) PrimitiveType.Capsule;
+                Utils.Vector3ToByteArray(character.Value.transform.position, positions, j);
                 j += 12;
             }
 
+            _logger.Log("Positions: " + Utils.FrameToString(positions));
             return positions;
         }
 
         protected GameObject SpawnObject(byte id, PrimitiveType primitiveType, Vector3 pos, Color color)
         {
+            Dictionary<byte, GameObject> objectDict = primitiveType == PrimitiveType.Capsule? characters : enemies;
+            if (objectDict.ContainsKey(id))
+                return objectDict[id];
             GameObject gameObject = GameObject.CreatePrimitive(primitiveType);
             gameObject.transform.position = pos;
             gameObject.GetComponent<Renderer>().material.color = color;
-            _gameObjects[id] = gameObject;
-            _gameObjectTypes[id] = (byte) primitiveType;
-            _gameObjectsCount++;
+            objectDict.Add(id, gameObject);
             return gameObject;
         }
 
@@ -57,54 +63,28 @@ namespace WorldManagement
             capsule.tag = "Player";
         }
 
-        protected HashSet<byte> DeleteAllNPCs()
+        protected HashSet<byte> AttackNPCsNearPoint(Vector3 transformPosition)
         {
             HashSet<byte> deletedIds = new HashSet<byte>();
-            for (int i = 0; i < _gameObjects.Length; i++)
+            foreach (KeyValuePair<byte, GameObject> enemy in enemies)
             {
-                if (!_gameObjects[i])
+                if (Vector3.Distance(transformPosition, enemy.Value.transform.position) < 10.0)
                 {
-                    continue;
-                }
-                if (_gameObjectTypes[i] == (byte)PrimitiveType.Cylinder)
-                {
-                    DestroyGameObject(i);
-                    deletedIds.Add((byte) i);
-                }
-            }
-
-            return deletedIds;
-        }
-        
-        protected HashSet<byte> AttackNPCsNearPoint(Vector3 transformPosition, bool destroyObjects = true)
-        {
-            HashSet<byte> deletedIds = new HashSet<byte>();
-            for (int i = 0; i < _gameObjects.Length; i++)
-            {
-                if (!_gameObjects[i])
-                {
-                    continue;
-                }
-                if (_gameObjectTypes[i] == (byte)PrimitiveType.Cylinder &&
-                    Vector3.Distance(transformPosition, _gameObjects[i].transform.position) < 10.0)
-                {
-                    if(destroyObjects)
-                        DestroyGameObject(i);
-                    deletedIds.Add((byte) i);
+                    DestroyGameObject(enemy.Key, false);
+                    deletedIds.Add(enemy.Key);
                 }
             }
 
             return deletedIds;
         }
 
-        protected void DestroyGameObject(int id)
+        protected void DestroyGameObject(byte id, bool isChar)
         {
-            if (_gameObjects[id])
+            Dictionary<byte, GameObject> objectDict = isChar ? characters : enemies;
+            if (objectDict.ContainsKey(id))
             {
-                Object.Destroy(_gameObjects[id]);
-                _gameObjects[id] = null;
-                _gameObjectTypes[id] = 0;
-                _gameObjectsCount--;
+                Object.Destroy(objectDict[id]);
+                objectDict.Remove(id);
             }
         }
     }
