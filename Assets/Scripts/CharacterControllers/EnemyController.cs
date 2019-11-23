@@ -27,6 +27,7 @@ namespace DefaultNamespace
             GameObject closestPlayer = null;
             byte closestPlayerId = 0;
             float minDist = int.MaxValue;
+            Debug.Log("ID: " + _id);
             for (int i = 0; i < _players.Length; i++)
             {
                 if (!_players[i])

@@ -67,6 +67,7 @@ namespace WorldManagement
         {
             foreach (KeyValuePair<byte, EnemyController> pair in enemyControllers)
             {
+                _logger.Log("ID: update " + pair.Key);
                 pair.Value.Update();
             }
 
@@ -80,6 +81,7 @@ namespace WorldManagement
         public void PlayerAttacked(byte playerId)
         {
             HashSet<byte> enemiesToDelete = AttackNPCsNearPoint(characters[playerId].transform.position);
+            _logger.Log("IDs to Delete: " + enemiesToDelete);
             foreach (byte id in enemiesToDelete)
             {
                 enemyControllers.Remove(id);

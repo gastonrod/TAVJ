@@ -5170,11 +5170,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   sourcePort: 9696
-  frameRate: 2
+  frameRate: 1
   delayInMs: 0
   packetLossPct: 1
-  spawnRate: 2
-  messageRate: 1
+  spawnRate: 1000
+  messageRate: 2
 --- !u!4 &605503976
 Transform:
   m_ObjectHideFlags: 0
@@ -5225,7 +5225,7 @@ MonoBehaviour:
   delayInMs: 0
   playerColor: {r: 1, g: 0, b: 0, a: 1}
   frameRate: 30
-  messageRate: 1
+  messageRate: 2
 --- !u!4 &1019445291
 Transform:
   m_ObjectHideFlags: 0

@@ -1,7 +1,5 @@
 ﻿using System.Collections.Generic;
-using System.Runtime.InteropServices.WindowsRuntime;
 using Connections.Streams;
-using Connections.Loggers;
 using DefaultNamespace;
 using UnityEngine;
 using ILogger = Connections.Loggers.ILogger;
@@ -70,9 +68,13 @@ namespace WorldManagement
             {
                 if (Vector3.Distance(transformPosition, enemy.Value.transform.position) < 10.0)
                 {
-                    DestroyGameObject(enemy.Key, false);
                     deletedIds.Add(enemy.Key);
                 }
+            }
+
+            foreach (byte id in deletedIds)
+            {
+                DestroyGameObject(id, false);
             }
 
             return deletedIds;

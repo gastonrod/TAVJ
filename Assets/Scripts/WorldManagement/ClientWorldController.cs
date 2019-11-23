@@ -56,18 +56,16 @@ namespace WorldManagement
                 return;
             foreach (KeyValuePair<byte, Vector3> enemy in frame.GetEnemies())
             {
-                GameObject enemyGO = enemies[enemy.Key];
-                if (enemyGO)
+                if (enemies.ContainsKey(enemy.Key))
                 {
-                    enemyGO.transform.position = enemy.Value;
+                    enemies[enemy.Key].transform.position = enemy.Value;
                 }
             }
             foreach (KeyValuePair<byte, Vector3> character in frame.GetCharacters())
             {
-                GameObject characterGO = characters[character.Key];
-                if (characterGO)
+                if (characters.ContainsKey(character.Key))
                 {
-                    characterGO.transform.position = character.Value;
+                    characters[character.Key].transform.position = character.Value;
                 }
             }
         }
