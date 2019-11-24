@@ -102,7 +102,7 @@ public class Server : MonoBehaviour
         {
             IPDataPacket ipDataPacket = queue.Dequeue();
             byte[] msg = ipDataPacket.message;
-            _worldController.MovePlayer(msg[0], InputUtils.DecodeInput(msg[1]), true);
+            _worldController.MoveObject(msg[0], InputUtils.DecodeInput(msg[1]), true);
             if (InputUtils.InputSpawnEnemy(msg[1]))
             {
                 _worldController.SpawnEnemy();

@@ -34,7 +34,7 @@ public class Client : MonoBehaviour
     
     void Start()
     {
-        _worldController = new ClientWorldController(new FramesStorer(),(ClientLogger)_logger);
+        _worldController = new ClientWorldController(new FramesStorer(frameRate),(ClientLogger)_logger);
         ipEndPoint = new IPEndPoint(IPAddress.Parse(ipAddressString), destinationPort);
         ConnectionClasses = Utils.GetConnectionClasses(sourcePort, delayInMs, 0,_logger);
         ConnectionClasses.rss.InitConnection(clientId, ipEndPoint);

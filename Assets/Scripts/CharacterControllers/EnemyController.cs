@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using WorldManagement;
@@ -7,8 +8,8 @@ namespace DefaultNamespace
 {
     public class EnemyController
     {
-        
-        private GameObject[] _players;
+
+        private Dictionary<byte, GameObject> _players;
         private GameObject _me;
         private ServerWorldController _swc;
         private byte _id;
@@ -16,8 +17,8 @@ namespace DefaultNamespace
         private int _maxMove = 3;
         public EnemyController(ServerWorldController swc, GameObject me, byte id)
         {
-            _players = GameObject.FindGameObjectsWithTag("Player");
             _swc = swc;
+            _players = _swc.GetCharacters();
             _me = me;
             _id = id;
         }
@@ -25,22 +26,24 @@ namespace DefaultNamespace
         public void Update()
         {
             GameObject closestPlayer = null;
-            byte closestPlayerId = 0;
+            byte closestPlayerId = byte.MaxValue;
             float minDist = int.MaxValue;
-            Debug.Log("ID: " + _id);
-            for (int i = 0; i < _players.Length; i++)
+            Debug.Log("Enemy looking for player");
+            foreach (KeyValuePair<byte, GameObject> playerPair in _players)
             {
+                byte i = playerPair.Key;
                 if (!_players[i])
                     continue;
-                float dist = Math.Abs((_me.transform.position - _players[i].transform.position).magnitude);
+                float dist = Math.Abs((_me.transform.position - playerPair.Value.transform.position).magnitude);
                 if (dist < minDist)
                 {
-                    closestPlayer = _players[i];
-                    closestPlayerId = (byte)i;
+                    closestPlayer = playerPair.Value;
+                    closestPlayerId = i;
                     minDist = dist;
                 }
             }
 
+            Debug.Log("ClosestPlayer: " + closestPlayerId);
             if (!closestPlayer)
                 return;
             Vector3 move =  closestPlayer.transform.position - _me.transform.position;
@@ -49,7 +52,7 @@ namespace DefaultNamespace
             move.x = x;
             move.z = z;
             _swc.MoveEnemy(_id, move, closestPlayerId);
-            _players = GameObject.FindGameObjectsWithTag("Player");
+            _players = _swc.GetCharacters();
         }
 
     }

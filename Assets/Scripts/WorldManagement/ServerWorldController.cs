@@ -33,7 +33,7 @@ namespace WorldManagement
 
         public byte SpawnCharacter()
         {
-            SpawnCharacter(_lastCharacterId, Color.white);
+            SpawnCharacter(_lastCharacterId, Color.white, true);
             objectsToCreate.Enqueue(new Tuple<byte, PrimitiveType>(_lastCharacterId, PrimitiveType.Capsule));
             return _lastCharacterId++;
         }
@@ -43,16 +43,16 @@ namespace WorldManagement
             return _movementSpeed;
         }
 
-        public void MovePlayer(byte id, Vector3 movement, bool isCharacter)
+        public void MoveObject(byte id, Vector3 movement, bool isCharacter)
         {
-            Dictionary<byte, GameObject> objectDict = isCharacter ? characters : enemies;
-            objectDict[id].transform.position += movement * _movementSpeed;
+            Dictionary<byte, GameObject> objectDict = isCharacter ? _characters : _enemies;
+            objectDict[id].GetComponent<CharacterController>().Move(movement);
         }
 
         public void SpawnEnemy()
         {
             Vector3 pos = new Vector3(_random.Next(_xRange) - _xRange/2 , 1.1f, _random.Next(_zRange) - _zRange/2);
-            GameObject enemy = SpawnObject(_lastEnemyId, PrimitiveType.Cylinder, pos, Color.cyan);
+            GameObject enemy = SpawnObject(_lastEnemyId, PrimitiveType.Cylinder, pos, Color.cyan, true);
             enemyControllers[_lastEnemyId] = new EnemyController(this, enemy, _lastEnemyId);
             objectsToCreate.Enqueue(new Tuple<byte, PrimitiveType>(_lastEnemyId, PrimitiveType.Cylinder));
             _lastEnemyId++;
@@ -80,7 +80,7 @@ namespace WorldManagement
 
         public void PlayerAttacked(byte playerId)
         {
-            HashSet<byte> enemiesToDelete = AttackNPCsNearPoint(characters[playerId].transform.position);
+            HashSet<byte> enemiesToDelete = AttackNPCsNearPoint(_characters[playerId].transform.position);
             _logger.Log("IDs to Delete: " + enemiesToDelete);
             foreach (byte id in enemiesToDelete)
             {
@@ -91,13 +91,13 @@ namespace WorldManagement
 
         public void MoveEnemy(byte id, Vector3 move, byte playerId)
         {
-            if (!characters.ContainsKey(playerId))
+            if (!_characters.ContainsKey(playerId))
             {
                 return;
             }
-            Vector3 playerPos = characters[playerId].transform.position;
-            MovePlayer(id, move, false);
-            if (enemies[id].transform.position.Equals(playerPos))
+            Vector3 playerPos = _characters[playerId].transform.position;
+            MoveObject(id, move, false);
+            if (_enemies[id].transform.position.Equals(playerPos))
             {
                 AttackPlayer(playerId);
             }
@@ -120,6 +120,11 @@ namespace WorldManagement
             Queue<Tuple<byte, PrimitiveType>> toReturn = objectsToCreate;
             objectsToCreate = new Queue<Tuple<byte, PrimitiveType>>();
             return toReturn;
+        }
+
+        public Dictionary<byte, GameObject> GetCharacters()
+        {
+            return _characters;
         }
     }
 }

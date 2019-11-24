@@ -11,6 +11,7 @@ namespace WorldManagement
         protected FramesStorer _framesStorer;
         protected HashSet<byte> deletedIds = new HashSet<byte>();
         protected byte _playerId;
+        private GameObject _player;
 
         public ClientWorldController(FramesStorer framesStorer, ClientLogger logger) : base(logger)
         {
@@ -19,7 +20,7 @@ namespace WorldManagement
 
         public void SpawnPlayer(byte id, Color color)
         {
-            SpawnCharacter(id, color);
+            _player = SpawnCharacter(id, color, true);
             _playerId = id;
             _clientSetCharacter = true;
         }
@@ -31,6 +32,7 @@ namespace WorldManagement
 
         public void PredictMovePlayer( Vector3 movement, int packetSize)
         {
+            _player.GetComponent<CharacterController>().Move(movement);
 //            Vector3 newPos = _gameObjects[_playerId].transform.position + movement * _movementSpeed;
 //            byte[] predictedPositions = GetPositions((byte)(_framesStorer.CurrentSnapshotId()+3));
 //            _logger.Log("playerId: " + _playerId + " length: " + predictedPositions.Length);
@@ -56,16 +58,16 @@ namespace WorldManagement
                 return;
             foreach (KeyValuePair<byte, Vector3> enemy in frame.GetEnemies())
             {
-                if (enemies.ContainsKey(enemy.Key))
+                if (_enemies.ContainsKey(enemy.Key))
                 {
-                    enemies[enemy.Key].transform.position = enemy.Value;
+                    _enemies[enemy.Key].transform.position = enemy.Value;
                 }
             }
             foreach (KeyValuePair<byte, Vector3> character in frame.GetCharacters())
             {
-                if (characters.ContainsKey(character.Key))
+                if (character.Key != _playerId && _characters.ContainsKey(character.Key))
                 {
-                    characters[character.Key].transform.position = character.Value;
+                    _characters[character.Key].transform.position = character.Value;
                 }
             }
         }
@@ -73,7 +75,7 @@ namespace WorldManagement
         public Vector3 GetPlayerPosition()
         {
             // TODO: Change when I implement player as something appart from this.
-            return characters[_playerId] ? characters[_playerId].transform.position : Vector3.zero;
+            return _characters[_playerId] ? _characters[_playerId].transform.position : Vector3.zero;
         }
 
         public void DestroyObject(byte charId, bool isChar)

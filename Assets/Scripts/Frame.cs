@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Runtime.InteropServices.WindowsRuntime;
 using UnityEngine;
 
 namespace DefaultNamespace
@@ -10,7 +9,7 @@ namespace DefaultNamespace
         private Dictionary<byte, Vector3> _characters = new Dictionary<byte, Vector3>();
         public byte frameID;
 
-        protected Frame(Dictionary<byte, Vector3> enemies, Dictionary<byte, Vector3> characters)
+        private Frame(Dictionary<byte, Vector3> enemies, Dictionary<byte, Vector3> characters)
         {
             _enemies = enemies;
             _characters = characters;
@@ -69,16 +68,29 @@ namespace DefaultNamespace
             Dictionary<byte, Vector3> characters = new Dictionary<byte, Vector3>();
             foreach (KeyValuePair<byte, Vector3> enemyPair in f1._enemies)
             {
-                Vector3 f0ObjPos = f0._enemies[enemyPair.Key];
-                enemies[enemyPair.Key] = f0ObjPos + (enemyPair.Value - f0ObjPos) * percentageOfFrame;
+                if (f0._enemies.ContainsKey(enemyPair.Key))
+                {
+                    Vector3 f0ObjPos = f0._enemies[enemyPair.Key];
+                    enemies[enemyPair.Key] = f0ObjPos + (enemyPair.Value - f0ObjPos) * percentageOfFrame;
+                }
+                else
+                {
+                    enemies[enemyPair.Key] = enemyPair.Value;
+                }
             }
             foreach (KeyValuePair<byte, Vector3> characterPair in f1._characters)
             {
-                Vector3 f0ObjPos = f0._characters[characterPair.Key];
-                characters[characterPair.Key] = f0ObjPos + (characterPair.Value - f0ObjPos) * percentageOfFrame;
+                if (f0._characters.ContainsKey(characterPair.Key))
+                {
+                    Vector3 f0ObjPos = f0._characters[characterPair.Key];
+                    characters[characterPair.Key] = f0ObjPos + (characterPair.Value - f0ObjPos) * percentageOfFrame;
+                }
+                else
+                {
+                    characters[characterPair.Key] = characterPair.Value;
+                }
             }
             Frame returnFrame = new Frame(enemies, characters);
-            Debug.Log(returnFrame);
             return returnFrame;
         }
         
