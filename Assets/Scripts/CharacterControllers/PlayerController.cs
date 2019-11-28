@@ -1,9 +1,8 @@
 ﻿using System.Net;
-using System.Numerics;
 using Connections.Streams;
 using DefaultNamespace;
-using UnityEditor.UI;
 using UnityEngine;
+using UnityEngine.UIElements;
 using WorldManagement;
 using Vector3 = UnityEngine.Vector3;
 
@@ -14,14 +13,16 @@ public class PlayerController : MonoBehaviour
     private static byte _playerId;
     private static ClientWorldController _worldController;
     private int _acumTimeFrames = 0;
-    private int _msBetweenFrames = 100;
-    private ParticleSystem bigExplosion;
+    private int _msBetweenFrames = 1000;
+    private ParticleSystem _bigExplosion;
+    private byte _lastInputId = 1;
+    private byte _input;
 
 
     void Start()
     {
-        bigExplosion = gameObject.GetComponentInChildren<ParticleSystem>();
-        bigExplosion.Stop();
+        _bigExplosion = gameObject.GetComponentInChildren<ParticleSystem>();
+        _bigExplosion.Stop();
     }
     void Update()
     {
@@ -37,27 +38,37 @@ public class PlayerController : MonoBehaviour
 
         int deltaTimeInMs = (int)(1000 * Time.deltaTime);
         _acumTimeFrames += deltaTimeInMs;
-        if (_acumTimeFrames > _msBetweenFrames)
+        byte keyboardInput = InputUtils.GetKeyboardInput();
+        if (InputUtils.PlayerAttacked(keyboardInput))
         {
             UpdatePosition();
+            _reliableFastStream.SendInput(new InputPackage(_lastInputId, (byte)InputCodifications.HIT_ENEMIES), _playerId, _ipEndPoint);
+            _bigExplosion.Emit(20);
+            _worldController.PlayerAttacked();
+        }
+        if (_acumTimeFrames > _msBetweenFrames)
+        {
             _acumTimeFrames = _acumTimeFrames % _msBetweenFrames;
-            byte input = InputUtils.GetKeyboardInput();
+            byte input = keyboardInput == 0 ? _input : keyboardInput;
             if (input != 0)
             {
-                _reliableFastStream.SendInput(input, _playerId, _ipEndPoint);
+                InputPackage inputPackage = new InputPackage(_lastInputId++, input);
+                _reliableFastStream.SendInput(inputPackage, _playerId, _ipEndPoint);
                 if (InputUtils.PlayerMoved(input))
                 {
-                    _worldController.PredictMovePlayer(InputUtils.DecodeInput(input),
+                    _worldController.PredictMovePlayer(inputPackage,
                         UnreliableStream.PACKET_SIZE);
                 }
-                if (InputUtils.PlayerAttacked(input))
-                {
-                    bigExplosion.Emit(20);
-                }
             }
+            _input = 0;
+        }
+        else
+        {
+            _input = keyboardInput != 0 ? keyboardInput : _input;
         }
     }
 
+    // Move the position of this game object so that the splash effect appears below the player
     private void UpdatePosition()
     {
         if (_worldController != null)

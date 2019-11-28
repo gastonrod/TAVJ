@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net;
 using Connections;
 using Connections.Loggers;
+using Connections.Streams;
 using DefaultNamespace;
 using UnityEngine;
 using WorldManagement;
@@ -48,7 +49,7 @@ public class Server : MonoBehaviour
         {
             _messagesAcumTime = _messagesAcumTime % _msBetweenMessages;
             _connectionClasses.pp.Update();
-            ListenNewConnections();
+            ListenRSS();
             ListenInputs();
             SendToClients();
         }
@@ -65,8 +66,8 @@ public class Server : MonoBehaviour
         {
             SendPositions(clientIp);
         }
-        SendDestroys();
         SendCreates();
+        SendDestroys();
     }
 
     private void SendCreates()
@@ -79,9 +80,10 @@ public class Server : MonoBehaviour
             }
         }
     }
+    
     private void SendDestroys()
     {
-        foreach(Tuple<byte, PrimitiveType> idTypeTuple in _worldController.ObjectsToDestroy())
+        foreach(Tuple<byte, PrimitiveType> idTypeTuple in _worldController.GetObjectsToDestroy())
         {
             foreach (IPEndPoint clientIp in connectedClients)
             {
@@ -95,6 +97,7 @@ public class Server : MonoBehaviour
         byte[] positions = _worldController.GetPositions(snapshotId++);
         _connectionClasses.us.SaveMessageToSend(positions, clientIp);
     }
+    
     private void ListenInputs()
     {
         Queue<IPDataPacket> queue = _connectionClasses.rfs.GetReceivedData();
@@ -102,31 +105,38 @@ public class Server : MonoBehaviour
         {
             IPDataPacket ipDataPacket = queue.Dequeue();
             byte[] msg = ipDataPacket.message;
-            _worldController.MoveObject(msg[0], InputUtils.DecodeInput(msg[1]), true);
-            if (InputUtils.InputSpawnEnemy(msg[1]))
+            InputPackage inputPackage = new InputPackage(msg[1], msg[2]);
+            _worldController.MoveCharacter(msg[0], inputPackage);
+            if (InputUtils.InputSpawnEnemy(msg[2]))
             {
                 _worldController.SpawnEnemy();
             }
 
-            if (InputUtils.PlayerAttacked(msg[1]))
+            if (InputUtils.PlayerAttacked(msg[2]))
             {
                 _worldController.PlayerAttacked(msg[0]);
             }
         }
     }
 
-    private void ListenNewConnections()
+    private void ListenRSS()
     {
         Queue<IPDataPacket> queue = _connectionClasses.rss.GetReceivedData();
         while (queue.Count > 0)
         {
             IPDataPacket ipDataPacket = queue.Dequeue();
             byte[] msg = ipDataPacket.message;
-            _logger.Log("New client: " + ipDataPacket.ip.ToString());
-            if (msg != null && msg.Length > 0)
+            byte msgType = msg[0];
+            switch (msgType)
             {
-                connectedClients.Add(ipDataPacket.ip);
-                _connectionClasses.rss.SpawnPlayer(_worldController.SpawnCharacter(), ipDataPacket.ip);
+                case (byte)RSSPacketTypes.DESTROY_OBJECT:
+                    byte charId = msg[1];
+                    _worldController.DestroyObject(charId, false);
+                    break;
+                case (byte)RSSPacketTypes.INIT_CONNECTION:
+                    connectedClients.Add(ipDataPacket.ip);
+                    _connectionClasses.rss.SpawnPlayer(_worldController.SpawnCharacter(), ipDataPacket.ip);
+                    break;
             }
         }
     }

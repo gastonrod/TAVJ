@@ -61,8 +61,8 @@ namespace DefaultNamespace
             string s = "{ " + frame[0] + ": ";
             for (int i = 1; i < frame.Length;)
             {
-                s += "<" + frame[i] + ", ";
-                i += 2;
+                s += "<" + frame[i] + ", " + frame[i+2]+ ", ";
+                i += 3;
                 s += ByteArrayToVector3(frame, i) + ">, ";
                 i += 12;
             }

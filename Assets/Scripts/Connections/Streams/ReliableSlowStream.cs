@@ -66,7 +66,7 @@ namespace Connections.Streams
                     if (messagesAcked[data.ip][packetId] != MESSAGE_IS_ACKED)
                     {
                         messagesAcked[data.ip][packetId] = MESSAGE_IS_ACKED;
-                        EnqueueGottenMessage(new [] {message[2]}, packetId, data.ip);
+                        EnqueueGottenMessage(new [] {message[1], message[2]}, packetId, data.ip);
                     }
                     break;
                 case (byte)RSSPacketTypes.DESTROY_OBJECT:
@@ -121,7 +121,6 @@ namespace Connections.Streams
 
         public void SendCreate(byte objectId, PrimitiveType primitiveType, IPEndPoint ip)
         {
-            _logger.Log("Send create:");
             byte[] msg = {_lastPacketId++, (byte) RSSPacketTypes.CREATE_OBJECT, objectId, (byte)primitiveType};
             SaveMessageToSend(msg, ip);
         }

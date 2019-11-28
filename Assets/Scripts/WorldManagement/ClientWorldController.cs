@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Connections.Loggers;
 using DefaultNamespace;
 using UnityEngine;
@@ -30,14 +31,9 @@ namespace WorldManagement
             return _clientSetCharacter;
         }
 
-        public void PredictMovePlayer( Vector3 movement, int packetSize)
+        public void PredictMovePlayer(InputPackage inputPackage, int packetSize)
         {
-            _player.GetComponent<CharacterController>().Move(movement);
-//            Vector3 newPos = _gameObjects[_playerId].transform.position + movement * _movementSpeed;
-//            byte[] predictedPositions = GetPositions((byte)(_framesStorer.CurrentSnapshotId()+3));
-//            _logger.Log("playerId: " + _playerId + " length: " + predictedPositions.Length);
-//            Utils.Vector3ToByteArray(newPos, predictedPositions, _playerId*UnreliableStream.PACKET_SIZE+3);
-//            _framesStorer.StoreFrame(predictedPositions);
+            _framesStorer.PredictMovement(inputPackage, _playerId);
         }
 
         // Delegate methods
@@ -48,7 +44,7 @@ namespace WorldManagement
 
         public void StoreFrame(byte[] message)
         {
-            _framesStorer.StoreFrame(message);
+            _framesStorer.StoreFrame(message, _playerId);
         }
         
         public void UpdatePositions()
@@ -65,9 +61,17 @@ namespace WorldManagement
             }
             foreach (KeyValuePair<byte, Vector3> character in frame.GetCharacters())
             {
-                if (character.Key != _playerId && _characters.ContainsKey(character.Key))
+                if (_characters.ContainsKey(character.Key))
                 {
-                    _characters[character.Key].transform.position = character.Value;
+                    if (character.Key != _playerId)
+                    {
+                        _characters[character.Key].transform.position = character.Value;
+                    }
+                    else
+                    {
+                        CharacterController cc = _player.GetComponent<CharacterController>();
+                        cc.Move(character.Value - cc.transform.position);
+                    }
                 }
             }
         }
@@ -96,8 +100,21 @@ namespace WorldManagement
 
         public void CreateObject(byte objId, PrimitiveType primitiveType)
         {
-            _logger.Log("Creating object: " + objId + ", " + primitiveType);
             SpawnObject(objId, primitiveType, Vector3.back, primitiveType == PrimitiveType.Capsule ? Color.red : Color.magenta);
+        }
+
+        public void PlayerAttacked()
+        {
+            HashSet<byte> enemiesToDelete = AttackNPCsNearPoint(_player.GetComponent<CharacterController>().transform.position);
+            foreach (byte id in enemiesToDelete)
+            {
+                ObjectsToDestroy.Enqueue(new Tuple<byte, PrimitiveType>(id, PrimitiveType.Cylinder));
+            }
+        }
+
+        public Queue<Tuple<byte, PrimitiveType>> GetEnemiesToDestroy()
+        {
+            return ObjectsToDestroy;
         }
     }
 }

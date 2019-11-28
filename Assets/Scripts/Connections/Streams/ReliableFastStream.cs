@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Net;
+using DefaultNamespace;
 using ILogger = Connections.Loggers.ILogger;
 
 namespace Connections.Streams
@@ -44,6 +45,7 @@ namespace Connections.Streams
             {
                 messagesToSend.Enqueue(acksToSend.Dequeue());
             }
+
             return messagesToSend;
         }
 
@@ -62,12 +64,9 @@ namespace Connections.Streams
                     messagesAcked[data.ip] = byte.MaxValue;
                 }
                 SendAck(packetId, data.ip);
-                if (messagesAcked[data.ip] < packetId || (messagesAcked[data.ip] > 250 && packetId < 5))
-                {
-                    byte[] decapsulatedMessage = {message[1], message[2]};
-                    messagesToReceive.Enqueue(new IPDataPacket(data.ip, decapsulatedMessage));
-                    messagesAcked[data.ip] = packetId;
-                }
+                byte[] decapsulatedMessage = {message[1], message[2], message[3]};
+                messagesToReceive.Enqueue(new IPDataPacket(data.ip, decapsulatedMessage));
+                messagesAcked[data.ip] = packetId;
             }
         }
 
@@ -82,9 +81,9 @@ namespace Connections.Streams
             SaveMessageToSend(ack, ip);
         }
 
-        public void SendInput(byte inputCode, byte playerID, IPEndPoint ip)
+        public void SendInput(InputPackage inputPackage, byte playerID, IPEndPoint ip)
         {
-            byte[] message = {_lastPacketID++, playerID, inputCode};
+            byte[] message = {_lastPacketID++, playerID, inputPackage.id, inputPackage.input};
             SaveMessageToSend(message, ip);
         }
     }

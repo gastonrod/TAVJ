@@ -28,7 +28,6 @@ namespace DefaultNamespace
             GameObject closestPlayer = null;
             byte closestPlayerId = byte.MaxValue;
             float minDist = int.MaxValue;
-            Debug.Log("Enemy looking for player");
             foreach (KeyValuePair<byte, GameObject> playerPair in _players)
             {
                 byte i = playerPair.Key;
@@ -43,7 +42,6 @@ namespace DefaultNamespace
                 }
             }
 
-            Debug.Log("ClosestPlayer: " + closestPlayerId);
             if (!closestPlayer)
                 return;
             Vector3 move =  closestPlayer.transform.position - _me.transform.position;

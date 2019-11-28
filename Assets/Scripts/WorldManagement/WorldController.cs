@@ -1,8 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Connections.Streams;
 using DefaultNamespace;
 using UnityEngine;
 using ILogger = Connections.Loggers.ILogger;
+using Object = UnityEngine.Object;
 
 namespace WorldManagement
 {
@@ -10,6 +12,9 @@ namespace WorldManagement
     {
         protected Dictionary<byte, GameObject> _characters = new Dictionary<byte, GameObject>();
         protected Dictionary<byte, GameObject> _enemies = new Dictionary<byte, GameObject>();
+        protected Queue<Tuple<byte, PrimitiveType>> ObjectsToDestroy = new Queue<Tuple<byte, PrimitiveType>>();
+        protected Queue<Tuple<byte, PrimitiveType>> ObjectsToCreate = new Queue<Tuple<byte, PrimitiveType>>();
+        protected byte[] characterLastInputIds = new byte[byte.MaxValue];
         protected byte _movementSpeed = 1;
         protected ILogger _logger;
 
@@ -28,6 +33,7 @@ namespace WorldManagement
             {
                 positions[j++] = enemy.Key;
                 positions[j++] = (byte) PrimitiveType.Cylinder;
+                positions[j++] = 0;
                 Utils.Vector3ToByteArray(enemy.Value.transform.position, positions, j);
                 j += 12;
             }
@@ -35,11 +41,11 @@ namespace WorldManagement
             {
                 positions[j++] = character.Key;
                 positions[j++] = (byte) PrimitiveType.Capsule;
+                positions[j++] = characterLastInputIds[character.Key];
                 Utils.Vector3ToByteArray(character.Value.transform.position, positions, j);
                 j += 12;
             }
 
-            _logger.Log("Positions: " + Utils.FrameToString(positions));
             return positions;
         }
 
@@ -93,6 +99,13 @@ namespace WorldManagement
                 Object.Destroy(objectDict[id]);
                 objectDict.Remove(id);
             }
+        }
+        
+        public Queue<Tuple<byte, PrimitiveType>> GetObjectsToDestroy()
+        {
+            Queue<Tuple<byte, PrimitiveType>> toReturn = ObjectsToDestroy;
+            ObjectsToDestroy = new Queue<Tuple<byte, PrimitiveType>>();
+            return toReturn;
         }
     }
 }

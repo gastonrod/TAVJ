@@ -8,30 +8,82 @@ namespace DefaultNamespace
         private Dictionary<byte, Vector3> _enemies = new Dictionary<byte, Vector3>();
         private Dictionary<byte, Vector3> _characters = new Dictionary<byte, Vector3>();
         public byte frameID;
+        private byte _playerId;
+        private byte _lastInputId;
+        private bool _isInjected = false;
 
-        private Frame(Dictionary<byte, Vector3> enemies, Dictionary<byte, Vector3> characters)
+        private Frame(Dictionary<byte, Vector3> enemies, Dictionary<byte, Vector3> characters, byte lastInputId, byte frameID)
         {
             _enemies = enemies;
             _characters = characters;
+            _lastInputId = lastInputId;
+            this.frameID = frameID;
         }
-        public Frame(byte[] snapshot)
+
+        public Frame(Frame frame)
         {
+            _enemies = new Dictionary<byte, Vector3>();
+            _characters = new Dictionary<byte, Vector3>();
+            _lastInputId = frame._lastInputId;
+            frameID = frame.frameID;
+            _isInjected = true;
+            foreach (KeyValuePair<byte, Vector3> enemyPair in frame._enemies)
+            {
+                _enemies[enemyPair.Key] = enemyPair.Value;
+            }
+            foreach (KeyValuePair<byte, Vector3> characterPair in frame._characters)
+            {
+                _characters[characterPair.Key] = characterPair.Value;
+            }
+        }
+        
+        public Frame(byte[] snapshot, byte playerId, Queue<InputPackage> inputPackages)
+        {
+            _playerId = playerId;
             frameID = snapshot[0];
             for (int i = 1; i < snapshot.Length;)
             {
-                byte objID = snapshot[i++];
+                byte objId = snapshot[i++];
                 PrimitiveType primitiveType = (PrimitiveType) snapshot[i++];
                 switch (primitiveType)
                 {
                     case PrimitiveType.Capsule:
-                        _characters[objID] = Utils.ByteArrayToVector3(snapshot, i);
+                        if (objId == playerId)
+                        {
+                            _lastInputId = snapshot[i];
+                        }
+                        i++;
+                        _characters[objId] = Utils.ByteArrayToVector3(snapshot, i);
                         break;
                     case PrimitiveType.Cylinder:
-                        _enemies[objID] = Utils.ByteArrayToVector3(snapshot, i);
+                        i++;
+                        _enemies[objId] = Utils.ByteArrayToVector3(snapshot, i);
                         break;
                 }
                 i += 12;
             }
+            ApplyPredictedInputs(inputPackages);
+        }
+
+        void ApplyPredictedInputs(Queue<InputPackage> inputPackages)
+        {
+            if (inputPackages.Count == 0)
+                return;
+            byte maxInputId = _lastInputId;
+            foreach (InputPackage inputPackage in inputPackages)
+            {
+                if (inputPackage.id > _lastInputId)
+                {
+                    _characters[_playerId] = _characters[_playerId] + InputUtils.DecodeInput(inputPackage.input);
+                    maxInputId = inputPackage.id;
+                }
+            }
+            while (inputPackages.Count > 0 && inputPackages.Peek().id <= _lastInputId)
+            {
+                inputPackages.Dequeue();
+            }
+
+            _lastInputId = maxInputId;
         }
 
         public Dictionary<byte, Vector3> GetEnemies()
@@ -90,16 +142,20 @@ namespace DefaultNamespace
                     characters[characterPair.Key] = characterPair.Value;
                 }
             }
-            Frame returnFrame = new Frame(enemies, characters);
+            Frame returnFrame = new Frame(enemies, characters, f1._lastInputId, f1.frameID);
             return returnFrame;
         }
         
         public override string ToString()
         {
-            string s = "Enemies: {";
-            foreach (KeyValuePair<byte, Vector3> enemyPair in _enemies)
+            string s = "(" + frameID + ", " + _lastInputId+ "): {";
+            if (_enemies.Count > 0)
             {
-                s += " <" + enemyPair.Key + ": " + enemyPair.Value + ">,";
+                s += "Enemies: {";
+                foreach (KeyValuePair<byte, Vector3> enemyPair in _enemies)
+                {
+                    s += " <" + enemyPair.Key + ": " + enemyPair.Value + ">,";
+                }
             }
 
             s += "}\nCharacters: {";
@@ -109,6 +165,27 @@ namespace DefaultNamespace
             }
             s += "}";
             return s;
+        }
+
+        public void PredictMovement(InputPackage inputPackage, byte playerId)
+        {
+            _playerId = playerId;
+            _lastInputId = inputPackage.id;
+            _characters[playerId] = _characters[playerId] + InputUtils.DecodeInput(inputPackage.input);
+        }
+
+        public void UpdateOtherEntitiesPositions(Frame frame)
+        {
+            Vector3 playerPosition = _characters[_playerId];
+            _enemies = frame._enemies;
+            _characters = frame._characters;
+            _characters[_playerId] = playerPosition;
+            frameID = frame.frameID;
+        }
+
+        public bool IsInjected()
+        {
+            return _isInjected;
         }
     }
 }

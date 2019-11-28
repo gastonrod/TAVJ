@@ -9,11 +9,11 @@ namespace Connections.Streams
         private ILogger _logger;
         /*
          *  Packet architecture:
-         *  |     1B   |     1B     |       12B      |
-         *  | ObjectID | ObjectType | ObjectPosition | 
+         *  |     1B   |     1B     |      1B     |       12B      |
+         *  | ObjectID | ObjectType | LastInputID | ObjectPosition | 
          */
 
-        public static readonly int PACKET_SIZE = 14;
+        public static readonly int PACKET_SIZE = 15;
         public UnreliableStream(ILogger logger)
         {
             _logger = logger;

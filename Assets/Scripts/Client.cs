@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Net;
 using Connections;
 using Connections.Loggers;
@@ -55,6 +56,7 @@ public class Client : MonoBehaviour
             ConnectionClasses.pp.Update();
             ReceiveFromRSS();
             ReceivePositions();
+            SendDestroys();
         }
         // Update current frame
         if (_acumTimeFrames > _msBetweenFrames)
@@ -82,6 +84,14 @@ public class Client : MonoBehaviour
         }
     }
 
+    private void SendDestroys()
+    {
+        foreach(Tuple<byte, PrimitiveType> idTypeTuple in _worldController.GetEnemiesToDestroy())
+        {
+                ConnectionClasses.rss.SendDestroy(idTypeTuple.Item1, idTypeTuple.Item2, ipEndPoint);
+        }
+    }
+    
     private void ReceiveFromRSS()
     {
         Queue<IPDataPacket> receivedData = ConnectionClasses.rss.GetReceivedData();

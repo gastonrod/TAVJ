@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Connections;
 using Connections.Streams;
 using DefaultNamespace;
@@ -20,6 +21,7 @@ namespace WorldManagement
         private bool _mustInterpolate;
         private int percentageOfFrame = 0;
         private int _fps;
+        private Queue<InputPackage> inputs = new Queue<InputPackage>();
 
         public FramesStorer(int framesPerSecond = 30)
         {
@@ -45,14 +47,14 @@ namespace WorldManagement
             return frame;
         }
 
-        public void StoreFrame(byte[] snapshot)
+        public void StoreFrame(byte[] snapshot, byte playerId)
         {
-            Frame frame = new Frame(snapshot);
+            Frame frame = new Frame(snapshot, playerId, inputs);
             if (_frames[0] == null)
             {
                 _frames[0] = frame;
+                return;
             }
-
             if (Frame.FramesAreEqual(_frames[0], frame))
             {
                 return;
@@ -61,13 +63,28 @@ namespace WorldManagement
             if (_frames[1] == null)
             {
                 _frames[1] = frame;
+                return;
             }
             if (Frame.FramesAreEqual(_frames[1], frame))
             {
                 return;
             }
+            if (_frames[1].IsInjected())
+            {
+                _frames[1].UpdateOtherEntitiesPositions(frame);
+                return;
+            }
             _frames[2] = frame;
         }
-       
+
+        public void PredictMovement(InputPackage inputPackage, byte playerId)
+        {
+            if (_frames[1] == null)
+            {
+                _frames[1] =  new Frame(_frames[0]);
+            }
+            _frames[1].PredictMovement(inputPackage, playerId);
+            inputs.Enqueue(inputPackage);
+        }
     }
 }
