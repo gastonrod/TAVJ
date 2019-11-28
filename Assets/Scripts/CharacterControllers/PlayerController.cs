@@ -45,6 +45,7 @@ public class PlayerController : MonoBehaviour
             if (input != 0)
             {
                 _reliableFastStream.SendInput(input, _playerId, _ipEndPoint);
+<<<<<<< Updated upstream
                 if (InputUtils.PlayerMoved(input))
                 {
                     _worldController.PredictMovePlayer(InputUtils.DecodeInput(input),
@@ -54,6 +55,18 @@ public class PlayerController : MonoBehaviour
                 {
                     bigExplosion.Emit(20);
                 }
+=======
+            }
+            if (InputUtils.PlayerMoved(input))
+            {
+                _worldController.PredictMovePlayer(_playerId, InputUtils.DecodeInput(input),
+                    UnreliableStream.PACKET_SIZE);
+>>>>>>> Stashed changes
+            }
+
+            if (InputUtils.PlayerAttacked(input))
+            {
+                _worldController.PlayerAttacked();
             }
         }
     }

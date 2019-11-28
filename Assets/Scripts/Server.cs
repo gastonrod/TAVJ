@@ -33,7 +33,11 @@ public class Server : MonoBehaviour
     
     void Start()
     {
+<<<<<<< Updated upstream
         _worldController = new ServerWorldController(spawnRate, (ServerLogger)_logger);
+=======
+        _worldController = new ServerWorldController((ServerLogger)_logger);
+>>>>>>> Stashed changes
         _msBetweenMessages = 1000 / messageRate;
         _msBetweenFrames = 1000 / frameRate;
         _connectionClasses = Utils.GetConnectionClasses(sourcePort, delayInMs, packetLossPct,_logger);

@@ -1,5 +1,9 @@
 ﻿using System.Collections.Generic;
 using Connections.Streams;
+<<<<<<< Updated upstream
+=======
+using Connections.Loggers;
+>>>>>>> Stashed changes
 using DefaultNamespace;
 using UnityEngine;
 using ILogger = Connections.Loggers.ILogger;
@@ -12,12 +16,20 @@ namespace WorldManagement
         protected Dictionary<byte, GameObject> _enemies = new Dictionary<byte, GameObject>();
         protected byte _movementSpeed = 1;
         protected ILogger _logger;
+<<<<<<< Updated upstream
 
         protected WorldController(ILogger logger)
         {
             _logger = logger;
         }
+=======
+>>>>>>> Stashed changes
 
+        protected WorldController(ILogger logger)
+        {
+            _logger = logger;
+        }
+        
         protected byte[] GetPositions(byte snapshotId)
         {
             int gameObjectsCount = (_characters.Count + _enemies.Count);
@@ -66,6 +78,7 @@ namespace WorldManagement
             return capsule;
         }
 
+<<<<<<< Updated upstream
         protected HashSet<byte> AttackNPCsNearPoint(Vector3 transformPosition)
         {
             HashSet<byte> deletedIds = new HashSet<byte>();
@@ -80,10 +93,31 @@ namespace WorldManagement
             foreach (byte id in deletedIds)
             {
                 DestroyGameObject(id, false);
+=======
+        protected HashSet<byte> DeleteAllNPCs()
+        {
+            HashSet<byte> deletedIds = new HashSet<byte>();
+            for (int i = 0; i < _gameObjects.Length; i++)
+            {
+                if (!_gameObjects[i])
+                {
+                    continue;
+                }
+                if (_gameObjectTypes[i] == (byte)PrimitiveType.Cylinder)
+                {
+                    _logger.Log("Deleting Cylinder: " + i);
+                    deletedIds.Add((byte) i);
+                    Object.Destroy(_gameObjects[i]);
+                    _gameObjects[i] = null;
+                    _gameObjectTypes[i] = 0;
+                    _gameObjectsCount--;
+                }
+>>>>>>> Stashed changes
             }
 
             return deletedIds;
         }
+<<<<<<< Updated upstream
 
         protected void DestroyGameObject(byte id, bool isChar)
         {
@@ -94,5 +128,7 @@ namespace WorldManagement
                 objectDict.Remove(id);
             }
         }
+=======
+>>>>>>> Stashed changes
     }
 }

@@ -1,8 +1,13 @@
+<<<<<<< Updated upstream
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Connections.Loggers;
 using Connections.Streams;
+=======
+﻿using System.Collections.Generic;
+using Connections.Loggers;
+>>>>>>> Stashed changes
 using DefaultNamespace;
 using UnityEngine;
 using Random = System.Random;
@@ -18,12 +23,18 @@ namespace WorldManagement
         private int _spawnRate;
         private Random _random = new Random();
         private Material _enemiesMaterial;
+<<<<<<< Updated upstream
         private Dictionary<byte, EnemyController> enemyControllers = new Dictionary<byte, EnemyController>();
         private Queue<Tuple<byte, PrimitiveType>> objectsToDestroy = new Queue<Tuple<byte, PrimitiveType>>();
         private Queue<Tuple<byte, PrimitiveType>> objectsToCreate = new Queue<Tuple<byte, PrimitiveType>>();
         private int _spawnRateTick = 0;
 
         public ServerWorldController(int spawnRate, ServerLogger logger) : base(logger)
+=======
+        private Dictionary<byte, EnemyController> enemies = new Dictionary<byte, EnemyController>();
+
+        public ServerWorldController(ServerLogger logger) : base(logger)
+>>>>>>> Stashed changes
         {
             Vector3 planeScale = GameObject.FindWithTag("Platform").transform.localScale*5;
             _xRange = (int)(planeScale.x * 2);
@@ -125,6 +136,12 @@ namespace WorldManagement
         public Dictionary<byte, GameObject> GetCharacters()
         {
             return _characters;
+        }
+
+        public void PlayerAttacked(byte player_id)
+        {
+            DeleteAllNPCs();
+            enemies = new Dictionary<byte, EnemyController>();
         }
     }
 }

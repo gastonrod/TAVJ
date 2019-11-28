@@ -5170,7 +5170,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   sourcePort: 9696
+<<<<<<< Updated upstream
   frameRate: 1
+=======
+  frameRate: 2
+>>>>>>> Stashed changes
   delayInMs: 0
   packetLossPct: 1
   spawnRate: 1000

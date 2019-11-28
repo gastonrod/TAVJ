@@ -1,7 +1,12 @@
 ﻿using System.Collections.Generic;
 using Connections.Loggers;
+<<<<<<< Updated upstream
+=======
+using Connections.Streams;
+>>>>>>> Stashed changes
 using DefaultNamespace;
 using UnityEngine;
+using UnityEngine.Experimental.PlayerLoop;
 
 namespace WorldManagement
 {
@@ -10,8 +15,11 @@ namespace WorldManagement
         protected bool _clientSetCharacter = false;
         protected FramesStorer _framesStorer;
         protected HashSet<byte> deletedIds = new HashSet<byte>();
+<<<<<<< Updated upstream
         protected byte _playerId;
         private GameObject _player;
+=======
+>>>>>>> Stashed changes
 
         public ClientWorldController(FramesStorer framesStorer, ClientLogger logger) : base(logger)
         {
@@ -58,9 +66,23 @@ namespace WorldManagement
                 return;
             foreach (KeyValuePair<byte, Vector3> enemy in frame.GetEnemies())
             {
+<<<<<<< Updated upstream
                 if (_enemies.ContainsKey(enemy.Key))
                 {
                     _enemies[enemy.Key].transform.position = enemy.Value;
+=======
+                int i = snapshot[j];
+                if (!_gameObjects[i]) 
+                {
+                    byte id = (byte)i;
+                    if(deletedIds.Contains(id))
+                    {
+                        PrimitiveType primitiveType = (PrimitiveType)snapshot[j+1];
+                        Vector3 pos = Utils.ByteArrayToVector3(snapshot, j+2);
+                        SpawnObject(id, primitiveType, pos, Color.yellow);
+                    }
+                    j += UnreliableStream.PACKET_SIZE;
+>>>>>>> Stashed changes
                 }
             }
             foreach (KeyValuePair<byte, Vector3> character in frame.GetCharacters())
@@ -72,6 +94,7 @@ namespace WorldManagement
             }
         }
 
+<<<<<<< Updated upstream
         public Vector3 GetPlayerPosition()
         {
             // TODO: Change when I implement player as something appart from this.
@@ -98,6 +121,11 @@ namespace WorldManagement
         {
             _logger.Log("Creating object: " + objId + ", " + primitiveType);
             SpawnObject(objId, primitiveType, Vector3.back, primitiveType == PrimitiveType.Capsule ? Color.red : Color.magenta);
+=======
+        public void PlayerAttacked()
+        {
+            deletedIds = DeleteAllNPCs();
+>>>>>>> Stashed changes
         }
     }
 }

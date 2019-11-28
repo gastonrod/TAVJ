@@ -25,6 +25,10 @@ namespace DefaultNamespace
 
         public void Update()
         {
+            if (!_me)
+            {
+                
+            }
             GameObject closestPlayer = null;
             byte closestPlayerId = byte.MaxValue;
             float minDist = int.MaxValue;
